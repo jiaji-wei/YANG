@@ -18,4 +18,6 @@ interface IYANGVault {
         uint256 amount1
     );
 
+    function getVaultFee() external returns(uint256);
+    function setVaultFee(uint256 fee) external;
 }

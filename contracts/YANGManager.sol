@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./libraries/CHI.sol"
 import "./interfaces/IYANGVault.sol";
 import "./interfaces/IYANGCallBack.sol";
+import "./interfaces/ICHIManager.sol";
 
 contract YANGManager is
     IYANGManager,
@@ -27,16 +28,27 @@ contract YANGManager is
     using Counters for Counters.Counter;
     using CHI for CHI.MintParams;
 
-    # GrandMaster Addresses address private chiManager;
+    // GrandMaster Addresses address private chiManager;
     address private deployer;
     address private vault;
 
-    # NFT Token and YANG ID
+    // NFT Token and YANG ID
     mapping(address => uint256) private _userTokenTracker;
     mapping(bytes32 => boolean) private _userExists;
     Counters.Counter private _tokenIdTracker;
 
-    # Modifier
+    uint256 public FEE_BASE = 1e6;
+    uint256 public VAULT_FEE = 1e6;
+
+    struct PositionInfo {
+        uint256 chiId;
+        address chiVault;
+        address token0;
+        address token1;
+        uint256 shares;
+    }
+
+    // Modifier
     modifier isAuthorizedForToken(uint256 tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), 'Not approved');
         _;
@@ -65,7 +77,7 @@ contract YANGManager is
         bytes32 key = keccak256(abi.encodePacked(recipient, token));
         require(_userExists[key] == false, "Alread exists");
 
-        # _mint function check tokenId existence
+        // _mint function check tokenId existence
         _mint(recipient, tokenId);
         _tokenIdTracker.increment();
         _userTokenTracker[recipient] = tokenId;
@@ -127,6 +139,36 @@ contract YANGManager is
         uint256 amount1
     ) external override isAuthorizedForToken(tokenId)
     {
+        // TODO: remove shares for user first and withdraw
         IYANGVault(vault).withdraw(tokenId, msg.sender, token0, amount0, token1, amount1);
     }
+
+    function subscribeCHI(
+        uint256 tokenId,
+        address token0
+        uint256 amount0,
+        uint256 amount0Min
+        address token1,
+        uint256 amount1,
+        uint256 amount1Min
+    ) external override isAuthorizedForToken(tokenId) returns (uint256)
+    {
+
+        (uint256 chiId, address chiVault) = ICHIManager(chiManager).mint(CHI.MintParams({
+            recipient: msg.sender,
+            token0: token0,
+            token1: token1,
+            fee: FEE_BASE,
+            vaultFee: VAULT_FEE
+        }));
+
+    }
+
+    function unsubscribeCHI(
+        uint256 tokenId,
+        uint256 chiId,
+        uint256 shares,
+        uint256 amount0Min,
+        uint256 amount1Min,
+    ) external override isAuthorizedForToken(tokenId) returns
 }
