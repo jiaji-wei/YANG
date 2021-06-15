@@ -9,32 +9,35 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Counters";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "./libraries/CHI.sol"
+import "./libraries/CHI.sol";
+import "./interfaces/IYANGVaultDeployer.sol";
+import "./interfaces/IYANGManager.sol";
 import "./interfaces/IYANGVault.sol";
 import "./interfaces/IYANGCallBack.sol";
 import "./interfaces/ICHIManager.sol";
 
 contract YANGManager is
     IYANGManager,
-    IYANGDepositCallBack,
+    IYANGCallBack,
     ReentrancyGuard,
-    ERC721,
+    ERC721
 {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using Counters for Counters.Counter;
     using CHI for CHI.MintParams;
 
-    // GrandMaster Addresses address private chiManager;
+    // GrandMaster Addresses
+    address private chiManager;
     address private deployer;
     address private vault;
 
     // NFT Token and YANG ID
     mapping(address => uint256) private _userTokenTracker;
-    mapping(bytes32 => boolean) private _userExists;
+    mapping(bytes32 => bool) private _userExists;
     Counters.Counter private _tokenIdTracker;
 
     uint256 public FEE_BASE = 1e6;
@@ -59,14 +62,11 @@ contract YANGManager is
         _;
     }
 
-    constructor(
-        address _chiManager,
-        address _deployer
-    ) ERC721("YANG's Asset Manager", "YANG")
+    constructor(address _chiManager) ERC721("YANG's Asset Manager", "YANG")
     {
         chiManager = _chiManager;
-        deployer = _deployer;
-        vault = IYANGDeployer(deployer).createVault(chiManager);
+        deployer = msg.sender;
+        vault = IYANGVaultDeployer(deployer).createVault(chiManager);
     }
 
     function mint(address recipient)
@@ -74,14 +74,14 @@ contract YANGManager is
         override
         returns (uint256 tokenId) {
         tokenId = _tokenIdTracker.current();
-        bytes32 key = keccak256(abi.encodePacked(recipient, token));
+        bytes32 key = keccak256(abi.encodePacked(recipient, tokenId));
         require(_userExists[key] == false, "Alread exists");
 
         // _mint function check tokenId existence
         _mint(recipient, tokenId);
         _tokenIdTracker.increment();
         _userTokenTracker[recipient] = tokenId;
-        _userExists[tokenKey] = true;
+        _userExists[key] = true;
 
         emit CreateNFT(recipient, tokenId);
     }
@@ -104,7 +104,7 @@ contract YANGManager is
     {
         require(msg.sender == vault, "Deposit callback failed");
         if (amount0 > 0) token0.transferFrom(user, msg.sender, amount0);
-        if (amount1 > 0) token1.transferFrom(user, msg.sender. amount1);
+        if (amount1 > 0) token1.transferFrom(user, msg.sender, amount1);
     }
 
     function WithdrawCallBack(
@@ -143,32 +143,32 @@ contract YANGManager is
         IYANGVault(vault).withdraw(tokenId, msg.sender, token0, amount0, token1, amount1);
     }
 
-    function subscribeCHI(
-        uint256 tokenId,
-        address token0
-        uint256 amount0,
-        uint256 amount0Min
-        address token1,
-        uint256 amount1,
-        uint256 amount1Min
-    ) external override isAuthorizedForToken(tokenId) returns (uint256)
-    {
+    /*function subscribeCHI(*/
+        /*uint256 tokenId,*/
+        /*address token0,*/
+        /*uint256 amount0,*/
+        /*uint256 amount0Min,*/
+        /*address token1,*/
+        /*uint256 amount1,*/
+        /*uint256 amount1Min*/
+    /*) external override isAuthorizedForToken(tokenId) returns (uint256)*/
+    /*{*/
 
-        (uint256 chiId, address chiVault) = ICHIManager(chiManager).mint(CHI.MintParams({
-            recipient: msg.sender,
-            token0: token0,
-            token1: token1,
-            fee: FEE_BASE,
-            vaultFee: VAULT_FEE
-        }));
+        /*(uint256 chiId, address chiVault) = ICHIManager(chiManager).mint(CHI.MintParams({*/
+            /*recipient: msg.sender,*/
+            /*token0: token0,*/
+            /*token1: token1,*/
+            /*fee: FEE_BASE,*/
+            /*vaultFee: VAULT_FEE*/
+        /*}));*/
+        /*return chiId;*/
+    /*}*/
 
-    }
-
-    function unsubscribeCHI(
-        uint256 tokenId,
-        uint256 chiId,
-        uint256 shares,
-        uint256 amount0Min,
-        uint256 amount1Min,
-    ) external override isAuthorizedForToken(tokenId) returns
+    /*function unsubscribeCHI(*/
+        /*uint256 tokenId,*/
+        /*uint256 chiId,*/
+        /*uint256 shares,*/
+        /*uint256 amount0Min,*/
+        /*uint256 amount1Min,*/
+    /*) external override isAuthorizedForToken(tokenId)*/
 }

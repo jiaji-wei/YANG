@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "./interfaces/IYANGManager.sol";
 import "./interfaces/IYANGVault.sol";
 import "./interfaces/IYANGCallBack.sol";
+import "./interfaces/ICHIManager.sol";
 
 contract YANGVault is IYANGVault, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -37,16 +38,29 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
         address token0;
         address token1;
     }
+    uint256 private _vaultFee;
     mapping(bytes32 => Pool) private _poolMap;
 
     modifier onlyYangManager {
-        require(msg.sender == YANGManager);
+        require(msg.sender == address(yangManager));
         _;
     }
 
-    constructor(address chiManager, address yangManager) {
-        yangManager = yangManager;
-        chiManager = chiManager;
+    constructor(address _chiManager, address _yangManager) {
+        yangManager = IYANGManager(_yangManager);
+        chiManager = ICHIManager(_chiManager);
+    }
+
+    function getVaultFee() external override view returns (uint256) {
+        return _vaultFee;
+    }
+
+    function setVaultFee(uint256 fee)
+        external
+        override
+        onlyYangManager
+    {
+        _vaultFee = fee;
     }
 
     function addPool(address token0, address token1)
@@ -63,12 +77,12 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
         }
     }
 
-    function poolLength() external override views returns (uint256 length)
+    function poolLength() external override view returns (uint256 length)
     {
         length = _poolSet.length();
     }
 
-    function tokenLength() external override views returns (uint256 length)
+    function tokenLength() external override view returns (uint256 length)
     {
         length = _tokenSet.length();
     }
@@ -76,7 +90,7 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
     function showPoolAt(uint256 index)
         external
         override
-        views
+        view
         returns (address token0, address token1)
     {
         require(index < _poolSet.length(), "Exceed poolSet length");
@@ -85,7 +99,11 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
         (token0, token1) = (pool.token0, pool.token1);
     }
 
-    function showTokenAt(uint256 index) extrnal override views (address token)
+    function showTokenAt(uint256 index)
+        external
+        override
+        view
+        returns (address token)
     {
         require(index < _tokenSet.length(), "Exceed tokenSet length");
         token = _tokenSet.at(index);
@@ -113,7 +131,7 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
         }
     }
 
-    # Deposit
+    // Deposit
     function deposit(
         uint256 yangId,
         address user,
@@ -125,10 +143,16 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
         external
         override
         nonReentrant
-        onlyManager
+        onlyYangManager
     {
         // Pull in tokens from sender
-        IYANGCallBack(msg.sender).DepositCallBack(user, token0, amount0, token1, amount1);
+        IYANGCallBack(msg.sender).DepositCallBack(
+            user,
+            IERC20(token0),
+            amount0,
+            IERC20(token1),
+            amount1
+        );
 
         if (amount0 > 0) _addPosition(yangId, user, token0, amount0);
         if (amount1 > 0) _addPosition(yangId, user, token1, amount1);
@@ -148,7 +172,7 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
         position.balance.sub(amount);
     }
 
-    # Withdraw
+    // Withdraw
     function withdraw(
         uint256 yangId,
         address user,
@@ -160,12 +184,18 @@ contract YANGVault is IYANGVault, ReentrancyGuard {
         external
         override
         nonReentrant
-        onlyManager
+        onlyYangManager
     {
         // Push tokens to sender
         if (amount0 > 0) _burnPosition(yangId, user, token0, amount0);
         if (amount1 > 0) _burnPosition(yangId, user, token1, amount1);
-        IYANGCallBack(msg.sender).WithdrawCallBack(user, token0, amount0, token0, amount1);
-        emit Withdraw(yangId, amount0, amount1);
+        IYANGCallBack(msg.sender).WithdrawCallBack(
+            user,
+            IERC20(token0),
+            amount0,
+            IERC20(token1),
+            amount1
+        );
+        emit Withdraw(yangId, user, amount0, amount1);
     }
 }

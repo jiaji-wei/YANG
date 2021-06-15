@@ -6,6 +6,7 @@ interface IYANGVaultDeployer {
     function ShowManager() external view returns (address);
     function setOwner(address _owner) external;
     function setYangManager(address _manager) external;
+    function createVault(address _manager) external returns (address);
 
     event OwnerChanged(address indexed oldOwner, address indexed newOwner);
     event YangManagerChanged(address indexed oldManager, address indexed newManager);

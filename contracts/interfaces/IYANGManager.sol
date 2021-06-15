@@ -16,7 +16,7 @@ interface IYANGManager {
         uint256 amount1
     ) external;
 
-    function deposit(
+    function withdraw(
         uint256 tokenId,
         address token0,
         uint256 amount0,
@@ -24,23 +24,23 @@ interface IYANGManager {
         uint256 amount1
     ) external;
 
-    function subscribeCHI(
-        uint256 tokenId,
-        address token0
-        uint256 amount0,
-        uint256 amount0Min
-        address token1,
-        uint256 amount1,
-        uint256 amount1Min
-    ) external returns (uint256);
+    /*function subscribeCHI(*/
+        /*uint256 tokenId,*/
+        /*address token0,*/
+        /*uint256 amount0,*/
+        /*uint256 amount0Min,*/
+        /*address token1,*/
+        /*uint256 amount1,*/
+        /*uint256 amount1Min*/
+    /*) external returns (uint256);*/
 
-    function unsubscribeCHI(
-        uint256 tokenId,
-        uint256 chiId,
-        uint256 shares,
-        uint256 amount0Min,
-        uint256 amount1Min,
-    ) external;
+    /*function unsubscribeCHI(*/
+        /*uint256 tokenId,*/
+        /*uint256 chiId,*/
+        /*uint256 shares,*/
+        /*uint256 amount0Min,*/
+        /*uint256 amount1Min*/
+    /*) external;*/
 
     event CreateNFT(address indexed recipient, uint256 indexed tokenId);
 }

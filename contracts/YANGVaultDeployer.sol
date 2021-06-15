@@ -2,7 +2,7 @@
 pragma solidity 0.7.6;
 
 import "./YANGVault.sol";
-import "./interfaces/IYANGVaultDeployer";
+import "./interfaces/IYANGVaultDeployer.sol";
 
 contract YANGVaultDeployer is IYANGVaultDeployer {
     address public owner;
@@ -12,12 +12,12 @@ contract YANGVaultDeployer is IYANGVaultDeployer {
         owner = msg.sender;
     }
 
-    function ShowOwner() external override views returns (address)
+    function ShowOwner() external override view returns (address)
     {
         return owner;
     }
 
-    function ShowManager() external override views returns (address)
+    function ShowManager() external override view returns (address)
     {
         return manager;
     }
@@ -41,7 +41,7 @@ contract YANGVaultDeployer is IYANGVaultDeployer {
         owner = _owner;
     }
 
-    function setYangManger(address _manager)
+    function setYangManager(address _manager)
         external
         override
         onlyOwner
@@ -51,7 +51,7 @@ contract YANGVaultDeployer is IYANGVaultDeployer {
     }
 
     function createVault(address chiManager)
-        external
+        public
         override
         onlyManager
         returns (address vault)
