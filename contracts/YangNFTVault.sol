@@ -17,6 +17,7 @@ import "./libraries/CHI.sol";
 import "./libraries/SharesHelper.sol";
 import "./interfaces/IYangNFTVault.sol";
 import "./interfaces/ICHIManager.sol";
+import "./interfaces/ICHIVault.sol";
 
 
 contract YangNFTVault is
@@ -222,5 +223,40 @@ contract YangNFTVault is
         _increasePosition(params.yangId, pool.token1(), amount1);
 
         emit UnSubscribe(params.yangId, params.chiId, amount0, amount1);
+    }
+
+    // views function
+    function getShares(uint256 chiId, uint256 amount0Desired, uint256 amount1Desired)
+        external
+        override
+        view
+        returns (uint256, uint256, uint256)
+    {
+        require(_chi != address(0), 'prepare chi manager first');
+        (
+            ,
+            ,
+            ,
+            address _vault,
+            ,
+            ,
+            ,
+        ) = ICHIManager(_chi).chi(chiId);
+
+        ICHIVault vault = ICHIVault(_vault);
+        (uint256 totalAmount0, uint256 totalAmount1) = vault.getTotalAmounts();
+
+        (
+            uint256 shares,
+            uint256 amount0,
+            uint256 amount1
+        ) = SharesHelper.calcSharesAndAmounts(
+                totalAmount0,
+                totalAmount1,
+                amount0Desired,
+                amount1Desired,
+                vault.totalSupply()
+            );
+        return (shares, amount0, amount1);
     }
 }

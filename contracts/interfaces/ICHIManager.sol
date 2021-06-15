@@ -36,5 +36,12 @@ interface ICHIManager {
         uint256 amount1Min,
         address to
     ) external returns (uint256 amount0, uint256 amount1);
+
+    event Create(
+        uint256 tokenId,
+        address pool,
+        address vault,
+        uint256 vaultFee
+    );
 }
 

@@ -44,4 +44,10 @@ interface IYangNFTVault {
     function withdraw(uint256 tokenId, address token, uint256 amount, address recipient) external;
     function subscribe(SubscribeParam memory params) external;
     function unsubscribe(UnSubscribeParam memory params) external;
+
+    function getShares(
+        uint256 chiId,
+        uint256 amount0Desired,
+        uint256 amount1Desired
+    ) external view returns (uint256, uint256, uint256);
 }
