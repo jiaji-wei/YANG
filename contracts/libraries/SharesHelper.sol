@@ -23,6 +23,27 @@ import "../interfaces/IYangNFTVault.sol";
 
 
 library SharesHelper {
+
+    struct _burnShareParams {
+        IUniswapV3Pool pool;
+        ICHIVault vault;
+        address yang;
+        uint256 yangId;
+        uint128 liquidity;
+        uint256 shares;
+        int24 tickLower;
+        int24 tickUpper;
+    }
+
+    struct _poolCollectParams {
+        IUniswapV3Pool pool;
+        address yang;
+        bytes32 key0;
+        bytes32 key1;
+        uint256 collect0;
+        uint256 collect1;
+    }
+
     function calcSharesAndAmounts(
         uint256 totalAmount0,
         uint256 totalAmount1,
@@ -84,18 +105,19 @@ library SharesHelper {
     {
         for (uint i = 0; i < vault.getRangeCount(); i++) {
             (int24 tickLower, int24 tickUpper) = vault.getRange(i);
-            uint128 liquidity = _positionLiquidity(pool, address(vault), tickLower, tickUpper);
+            uint128 liquidity = _position(pool, address(vault), tickLower, tickUpper);
             if (liquidity > 0) {
-                (uint256 _amount0, uint256 _amount1) = _burnLiquidityShare(
-                                                            pool,
-                                                            vault,
-                                                            yang,
-                                                            yangId,
-                                                            liquidity,
-                                                            shares,
-                                                            tickLower,
-                                                            tickUpper
-                                                        );
+                _burnShareParams memory params = _burnShareParams({
+                                        pool: pool,
+                                        vault:vault,
+                                        yang: yang,
+                                        yangId: yangId,
+                                        liquidity: liquidity,
+                                        shares: shares,
+                                        tickLower: tickLower,
+                                        tickUpper: tickUpper
+                                    });
+                (uint256 _amount0, uint256 _amount1) = _burnShare(params);
                 amount0 = SafeMath.add(amount0, _amount0);
                 amount1 = SafeMath.add(amount1, _amount1);
             }
@@ -116,34 +138,40 @@ library SharesHelper {
         amount1 = SafeMath.add(amount1, unusedAmount1);
     }
 
-    function _burnLiquidityShare(
-        IUniswapV3Pool pool,
-        ICHIVault vault,
-        address yang,
-        uint256 yangId,
-        uint128 liquidity,
-        uint256 shares,
-        int24 tickLower,
-        int24 tickUpper
-    ) private view returns (uint256 amount0, uint256 amount1)
+    function _burnShare(_burnShareParams memory params)
+        private view returns (uint256 amount0, uint256 amount1)
     {
         int128 liquidityDelta = SafeCast.toInt128(
-                    -int256(FullMath.mulDiv(uint256(liquidity), shares, vault.totalSupply())
-                ));
+                    -int256(FullMath.mulDiv(uint256(params.liquidity),
+                                            params.shares,
+                                            params.vault.totalSupply())
+                    ));
         if (liquidityDelta > 0) {
             // according to pool.burn calculate amount0, amount1
-            (amount0, amount1) = _poolBurnShare(pool, tickLower, tickUpper, liquidityDelta);
+            int24 tickLower = params.tickLower;
+            int24 tickUpper = params.tickUpper;
+            uint256 yangId = params.yangId;
+            (uint256 collect0, uint256 collect1) = _poolBurn(
+                    params.pool, tickLower, tickUpper, liquidityDelta);
 
-            bytes32 poolPositionKey = PoolPosition.compute(yangId, address(vault), tickLower, tickUpper);
-            bytes32 positionKey = PositionKey.compute(address(vault), tickLower, tickUpper);
+            bytes32 key0 = PoolPosition.compute(yangId, address(params.vault), tickLower, tickUpper);
+            bytes32 key1 = PositionKey.compute(address(params.vault), tickLower, tickUpper);
 
-            (uint256 collect0, uint256 collect1) = _poolCollectFee(pool, yang, poolPositionKey, positionKey);
-            amount0 = amount0 > collect0 ? collect0 : amount0;
-            amount1 = amount1 > collect1 ? collect1 : amount1;
+            _poolCollectParams memory _params = _poolCollectParams({
+                        pool: params.pool,
+                        yang: params.yang,
+                        key0: key0,
+                        key1: key1,
+                        collect0: collect0,
+                        collect1: collect1
+                    });
+            (uint256 tokensOwed0, uint256 tokensOwed1) = _poolCollect(_params);
+            amount0 = collect0 > tokensOwed0 ? tokensOwed0 : collect0;
+            amount1 = collect1 > tokensOwed1 ? tokensOwed1 : collect1;
         }
     }
 
-    function _poolBurnShare(
+    function _poolBurn(
         IUniswapV3Pool pool,
         int24 tickLower,
         int24 tickUpper,
@@ -151,32 +179,35 @@ library SharesHelper {
     ) private view returns (uint256 amount0, uint256 amount1)
     {
         (uint160 sqrtPriceX96, int24 tick, , , , , ) = pool.slot0();
+        int256 _amount0;
+        int256 _amount1;
         if (liquidityDelta != 0) {
             if (tick < tickLower) {
-                amount0 = uint256(SqrtPriceMath.getAmount0Delta(
+                _amount0 = SqrtPriceMath.getAmount0Delta(
                     TickMath.getSqrtRatioAtTick(tickLower),
                     TickMath.getSqrtRatioAtTick(tickUpper),
                     liquidityDelta
-                ));
+                );
             } else if (tick < tickUpper) {
-                amount0 = uint256(SqrtPriceMath.getAmount0Delta(
+                _amount0 = SqrtPriceMath.getAmount0Delta(
                     sqrtPriceX96,
                     TickMath.getSqrtRatioAtTick(tickUpper),
                     liquidityDelta
-                ));
-                amount1 = uint256(SqrtPriceMath.getAmount1Delta(
+                );
+                _amount1 = SqrtPriceMath.getAmount1Delta(
                     TickMath.getSqrtRatioAtTick(tickLower),
                     sqrtPriceX96,
                     liquidityDelta
-                ));
+                );
             } else {
-                amount1 = uint256(SqrtPriceMath.getAmount1Delta(
+                _amount1 = SqrtPriceMath.getAmount1Delta(
                     TickMath.getSqrtRatioAtTick(tickLower),
                     TickMath.getSqrtRatioAtTick(tickUpper),
                     liquidityDelta
-                ));
+                );
             }
         }
+        return (uint256(-_amount0), uint256(-_amount1));
     }
 
     function _collect(
@@ -206,12 +237,8 @@ library SharesHelper {
         return (uint256(tokensOwed0), uint256(tokensOwed1));
     }
 
-    function _poolCollectFee(
-        IUniswapV3Pool pool,
-        address yang,
-        bytes32 poolPositionKey,
-        bytes32 positionKey
-    ) private view returns (uint256, uint256)
+    function _poolCollect(_poolCollectParams memory params)
+        private view returns (uint256, uint256)
     {
         (
             uint128 _liquidity,
@@ -219,27 +246,27 @@ library SharesHelper {
             uint256 _feeGrowthInside1LastX128,
             uint128 tokensOwed0,
             uint128 tokensOwed1
-        ) = IYangNFTVault(yang).positions(poolPositionKey);
+        ) = IYangNFTVault(params.yang).positions(params.key0);
 
         (
             ,
             uint256 feeGrowthInside0LastX128,
             uint256 feeGrowthInside1LastX128,
             ,
-        ) = pool.positions(positionKey);
+        ) = params.pool.positions(params.key1);
 
         return _collect(
             _liquidity,
             _feeGrowthInside0LastX128,
             _feeGrowthInside1LastX128,
-            tokensOwed0,
-            tokensOwed1,
+            tokensOwed0 + uint128(params.collect0),
+            tokensOwed1 + uint128(params.collect1),
             feeGrowthInside0LastX128,
             feeGrowthInside1LastX128
         );
     }
 
-    function _positionLiquidity(
+    function _position(
         IUniswapV3Pool pool,
         address vault,
         int24 tickLower,
