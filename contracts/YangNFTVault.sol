@@ -61,16 +61,16 @@ contract YangNFTVault is
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
 
     // chiManager
-    address private _chiManager;
+    address private chiManager;
 
     constructor() ERC721("YANG's Asset Manager", "YANG")
     {
         owner = msg.sender;
     }
 
-    function setCHIManager(address _chiManagerAddr) external onlyOwner
+    function setCHIManager(address _chiManager) external override onlyOwner
     {
-        _chiManager = _chiManagerAddr;
+        chiManager = _chiManager;
     }
 
     function mint(address recipient)
@@ -168,7 +168,7 @@ contract YangNFTVault is
         nonReentrant
         returns (uint256)
     {
-        require(_chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'prepare chi manager first');
         (
             ,
             ,
@@ -177,14 +177,14 @@ contract YangNFTVault is
             ,
             ,
             ,
-        ) = ICHIManager(_chiManager).chi(params.chiId);
+        ) = ICHIManager(chiManager).chi(params.chiId);
         require(params.amount0Desired >= params.amount0Min, 'desired amount insufficient');
         require(params.amount1Desired >= params.amount1Min, 'desired amount insufficient');
         (
             uint256 share,
             uint256 amount0,
             uint256 amount1
-        ) = ICHIManager(_chiManager).subscribe(
+        ) = ICHIManager(chiManager).subscribe(
                 params.yangId,
                 params.chiId,
                 params.amount0Desired,
@@ -225,7 +225,7 @@ contract YangNFTVault is
         isAuthorizedForToken(params.yangId)
         nonReentrant
     {
-        require(_chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'prepare chi manager first');
         (
             ,
             ,
@@ -234,7 +234,7 @@ contract YangNFTVault is
             ,
             ,
             ,
-        ) = ICHIManager(_chiManager).chi(params.chiId);
+        ) = ICHIManager(chiManager).chi(params.chiId);
         bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
         require(_chiPositionSet.contains(key), 'missing chi position');
 
@@ -243,7 +243,7 @@ contract YangNFTVault is
         (
             uint256 amount0,
             uint256 amount1
-        ) = ICHIManager(_chiManager).unsubscribe(
+        ) = ICHIManager(chiManager).unsubscribe(
                 params.yangId,
                 params.chiId,
                 params.shares,
@@ -299,7 +299,7 @@ contract YangNFTVault is
         view
         returns (uint256, uint256, uint256)
     {
-        require(_chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'prepare chi manager first');
         (
             ,
             ,
@@ -308,7 +308,7 @@ contract YangNFTVault is
             ,
             ,
             ,
-        ) = ICHIManager(_chiManager).chi(chiId);
+        ) = ICHIManager(chiManager).chi(chiId);
 
         ICHIVault vault = ICHIVault(_vault);
         (uint256 totalAmount0, uint256 totalAmount1) = vault.getTotalAmounts();
@@ -333,7 +333,7 @@ contract YangNFTVault is
         override
         returns (uint256 amount0, uint256 amount1)
     {
-        require(_chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'prepare chi manager first');
         bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
         require(_chiPositionSet.contains(key), 'missing chi position');
 
@@ -345,7 +345,7 @@ contract YangNFTVault is
             ,
             ,
             ,
-        ) = ICHIManager(_chiManager).chi(chiId);
+        ) = ICHIManager(chiManager).chi(chiId);
         ICHIVault vault = ICHIVault(_vault);
         IUniswapV3Pool pool = IUniswapV3Pool(_pool);
         uint256 shares = _chiPositions[key].shares;
@@ -356,6 +356,5 @@ contract YangNFTVault is
                 yangId,
                 shares
         );
-        emit AmountsFromShares(yangId, chiId, user, amount0, amount1);
     }
 }

@@ -41,8 +41,8 @@ interface IYangNFTVault {
     event Withdraw(uint256 indexed tokenId, address indexed token0, address token1);
     event Subscribe(uint256 indexed yangId, uint256 indexed chiId, uint256 indexed share);
     event UnSubscribe(uint256 indexed yangId, uint256 indexed chiId, uint256 amount0, uint256 amount1);
-    event AmountsFromShares(uint256 indexed yangId, uint256 indexedchiId, address indexed user, uint256 amount0, uint256 amount1);
 
+    function setCHIManager(address) external;
     function mint(address recipient) external returns (uint256 tokenId);
     function deposit(uint256 tokenId, address token0, uint256 amount0, address token1, uint256 amount1) external;
     function withdraw(uint256 tokenId, address token0, uint256 amount0, address token1, uint256 amount1) external;

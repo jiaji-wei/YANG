@@ -138,8 +138,8 @@ library SharesHelper {
             bytes32 positionKey = PositionKey.compute(address(vault), tickLower, tickUpper);
 
             (uint256 collect0, uint256 collect1) = _poolCollectFee(pool, yang, poolPositionKey, positionKey);
-            amount0 = SafeMath.add(amount0, collect0);
-            amount1 = SafeMath.add(amount1, collect1);
+            amount0 = amount0 > collect0 ? collect0 : amount0;
+            amount1 = amount1 > collect1 ? collect1 : amount1;
         }
     }
 
