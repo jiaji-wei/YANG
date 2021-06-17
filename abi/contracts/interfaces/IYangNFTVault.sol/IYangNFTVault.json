@@ -5,25 +5,56 @@
       {
         "indexed": true,
         "internalType": "uint256",
+        "name": "yangId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "indexedchiId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount0",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount1",
+        "type": "uint256"
+      }
+    ],
+    "name": "AmountsFromShares",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "token",
+        "name": "token0",
         "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "address",
-        "name": "user",
+        "name": "token1",
         "type": "address"
       }
     ],
@@ -67,7 +98,7 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "shares",
+        "name": "share",
         "type": "uint256"
       }
     ],
@@ -117,19 +148,13 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "token",
+        "name": "token0",
         "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "address",
-        "name": "user",
+        "name": "token1",
         "type": "address"
       }
     ],
@@ -145,17 +170,61 @@
       },
       {
         "internalType": "address",
-        "name": "token",
+        "name": "token0",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "amount0",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "token1",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount1",
         "type": "uint256"
       }
     ],
     "name": "deposit",
     "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "yangId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chiId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getAmounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -258,7 +327,13 @@
       }
     ],
     "name": "subscribe",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "share",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -290,11 +365,6 @@
             "internalType": "uint256",
             "name": "amount1Min",
             "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "recipient",
-            "type": "address"
           }
         ],
         "internalType": "struct IYangNFTVault.UnSubscribeParam",
@@ -316,18 +386,23 @@
       },
       {
         "internalType": "address",
-        "name": "token",
+        "name": "token0",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "amount0",
         "type": "uint256"
       },
       {
         "internalType": "address",
-        "name": "recipient",
+        "name": "token1",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount1",
+        "type": "uint256"
       }
     ],
     "name": "withdraw",

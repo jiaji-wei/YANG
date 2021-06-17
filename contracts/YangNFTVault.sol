@@ -88,14 +88,25 @@ contract YangNFTVault is
 
     function deposit(
         uint256 tokenId,
-        address token,
-        uint256 amount
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1
     ) external override isAuthorizedForToken(tokenId) nonReentrant
     {
-        require(amount > 0, 'deposit need nonzero amount');
+        require(amount0 > 0, 'deposit need nonzero amount0');
+        require(amount1 > 0, 'deposit need nonzero amount1');
+        _deposit(tokenId, token0, amount0);
+        _deposit(tokenId, token1, amount1);
+        emit Deposit(tokenId, token0, token1);
+    }
+
+    function _deposit(uint256 tokenId, address token, uint256 amount)
+        internal
+        isAuthorizedForToken(tokenId)
+    {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         _increasePosition(tokenId, token, amount);
-        emit Deposit(tokenId, token, amount, msg.sender);
     }
 
     function _increasePosition(uint256 tokenId, address token, uint256 amount) internal
@@ -122,16 +133,27 @@ contract YangNFTVault is
         position.balance = position.balance.sub(amount);
     }
 
+    function _withdraw(uint256 tokenId, address token, uint256 amount)
+        internal
+        isAuthorizedForToken(tokenId)
+    {
+        _decreasePosition(tokenId, token, amount);
+        IERC20(token).safeTransferFrom(address(this), msg.sender, amount);
+    }
+
     function withdraw(
         uint256 tokenId,
-        address token,
-        uint256 amount,
-        address recipient
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1
     ) external override isAuthorizedForToken(tokenId) nonReentrant
     {
-        require(amount > 0, 'withdraw need nonzero amount');
-        _decreasePosition(tokenId, token, amount);
-        IERC20(token).safeTransferFrom(address(this), recipient, amount);
+        require(amount0 > 0, 'withdraw need nonzero amount0');
+        require(amount1 > 0, 'withdraw need nonzero amount1');
+        _withdraw(tokenId, token0, amount0);
+        _withdraw(tokenId, token1, amount1);
+        emit Withdraw(tokenId, token0, token1);
     }
 
     function subscribe(IYangNFTVault.SubscribeParam memory params)
@@ -139,6 +161,7 @@ contract YangNFTVault is
         override
         isAuthorizedForToken(params.yangId)
         nonReentrant
+        returns (uint256)
     {
         require(_chiManager != address(0), 'prepare chi manager first');
         (
@@ -186,6 +209,7 @@ contract YangNFTVault is
         }
 
         emit Subscribe(params.yangId, params.chiId, share);
+        return share;
     }
 
     function unsubscribe(IYangNFTVault.UnSubscribeParam memory params)
@@ -218,7 +242,7 @@ contract YangNFTVault is
                 params.shares,
                 params.amount0Min,
                 params.amount1Min,
-                params.recipient
+                address(this)
             );
         position.shares = position.shares.sub(params.shares);
         position.amounts0 = position.amounts0.sub(amount0);
@@ -229,6 +253,37 @@ contract YangNFTVault is
         _increasePosition(params.yangId, pool.token1(), amount1);
 
         emit UnSubscribe(params.yangId, params.chiId, amount0, amount1);
+    }
+
+    function getAmounts(uint256 yangId, uint256 chiId, address user)
+        external
+        override
+        returns (uint256 amount0, uint256 amount1)
+    {
+        require(_chiManager != address(0), 'prepare chi manager first');
+        bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
+        require(_chiPositionSet.contains(key), 'missing chi position');
+
+        (
+            ,
+            ,
+            address _pool,
+            address _vault,
+            ,
+            ,
+            ,
+        ) = ICHIManager(_chiManager).chi(chiId);
+        ICHIVault vault = ICHIVault(_vault);
+        uint256 shares = _chiPositions[key].shares;
+
+        uint256 rangeCount = uint256(vault.getRangeCount());
+        CHI.VaultRange[] memory ranges = new CHI.VaultRange[](rangeCount);
+        for(uint256 i = 0; i < rangeCount; i++) {
+            (int24 tickLower, int24 tickUpper) = vault.getRange(i);
+            ranges[i] = CHI.VaultRange({tickLower: tickLower, tickUpper: tickUpper});
+        }
+        (amount0, amount1) = SharesHelper.calcAmountsFromShares(_pool, _vault, shares, ranges);
+        emit AmountsFromShares(yangId, chiId, user, amount0, amount1);
     }
 
     // views function
@@ -264,35 +319,5 @@ contract YangNFTVault is
                 vault.totalSupply()
             );
         return (shares, amount0, amount1);
-    }
-
-    function getAmounts(uint256 yangId, uint256 chiId, address user)
-        external
-        onlyOwner
-        returns (uint256 amount0, uint256 amount1)
-    {
-        require(_chiManager != address(0), 'prepare chi manager first');
-        bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
-        require(_chiPositionSet.contains(key), 'missing chi position');
-
-        (
-            ,
-            ,
-            address _pool,
-            address _vault,
-            ,
-            ,
-            ,
-        ) = ICHIManager(_chiManager).chi(chiId);
-        ICHIVault vault = ICHIVault(_vault);
-        uint256 shares = _chiPositions[key].shares;
-
-        uint256 rangeCount = uint256(vault.getRangeCount());
-        CHI.VaultRange[] memory ranges = new CHI.VaultRange[](rangeCount);
-        for(uint256 i = 0; i < rangeCount; i++) {
-            (int24 tickLower, int24 tickUpper) = vault.getRange(i);
-            ranges[i] = CHI.VaultRange({tickLower: tickLower, tickUpper: tickUpper});
-        }
-        (amount0, amount1) = SharesHelper.calcAmountsFromShares(_pool, _vault, shares, ranges);
     }
 }
