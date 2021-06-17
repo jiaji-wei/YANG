@@ -176,38 +176,38 @@ library SharesHelper {
         int24 tickLower,
         int24 tickUpper,
         int128 liquidityDelta
-    ) private view returns (uint256 amount0, uint256 amount1)
+    ) private view returns (uint256, uint256)
     {
         (uint160 sqrtPriceX96, int24 tick, , , , , ) = pool.slot0();
-        int256 _amount0;
-        int256 _amount1;
+        int256 amount0;
+        int256 amount1;
         if (liquidityDelta != 0) {
             if (tick < tickLower) {
-                _amount0 = SqrtPriceMath.getAmount0Delta(
+                amount0 = SqrtPriceMath.getAmount0Delta(
                     TickMath.getSqrtRatioAtTick(tickLower),
                     TickMath.getSqrtRatioAtTick(tickUpper),
                     liquidityDelta
                 );
             } else if (tick < tickUpper) {
-                _amount0 = SqrtPriceMath.getAmount0Delta(
+                amount0 = SqrtPriceMath.getAmount0Delta(
                     sqrtPriceX96,
                     TickMath.getSqrtRatioAtTick(tickUpper),
                     liquidityDelta
                 );
-                _amount1 = SqrtPriceMath.getAmount1Delta(
+                amount1 = SqrtPriceMath.getAmount1Delta(
                     TickMath.getSqrtRatioAtTick(tickLower),
                     sqrtPriceX96,
                     liquidityDelta
                 );
             } else {
-                _amount1 = SqrtPriceMath.getAmount1Delta(
+                amount1 = SqrtPriceMath.getAmount1Delta(
                     TickMath.getSqrtRatioAtTick(tickLower),
                     TickMath.getSqrtRatioAtTick(tickUpper),
                     liquidityDelta
                 );
             }
         }
-        return (uint256(-_amount0), uint256(-_amount1));
+        return (uint256(-amount0), uint256(-amount1));
     }
 
     function _collect(
