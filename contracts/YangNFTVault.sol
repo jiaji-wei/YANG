@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./libraries/CHI.sol";
+import "./libraries/PoolPosition.sol";
 import "./libraries/SharesHelper.sol";
 import "./interfaces/IYangNFTVault.sol";
 import "./interfaces/ICHIManager.sol";
@@ -29,6 +30,8 @@ contract YangNFTVault is
     using SafeMath for uint256;
     using Counters for Counters.Counter;
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using PoolPosition for mapping(bytes32 => PoolPosition.Info);
+    using PoolPosition for PoolPosition.Info;
 
     // owner
     address public owner;
@@ -54,6 +57,8 @@ contract YangNFTVault is
     mapping(bytes32 => ChiPosition) private _chiPositions;
     EnumerableSet.Bytes32Set private _chiPositionSet;
 
+    // poolPosition
+    mapping(bytes32 => PoolPosition.Info) private _poolPositions;
 
     // chiManager
     address private _chiManager;
@@ -208,6 +213,8 @@ contract YangNFTVault is
             });
         }
 
+        ICHIVault vault = ICHIVault(_vault);
+        _poolPositions.set(pool, vault, params.yangId);
         emit Subscribe(params.yangId, params.chiId, share);
         return share;
     }
@@ -223,7 +230,7 @@ contract YangNFTVault is
             ,
             ,
             address _pool,
-            ,
+            address _vault,
             ,
             ,
             ,
@@ -252,41 +259,40 @@ contract YangNFTVault is
         _increasePosition(params.yangId, pool.token0(), amount0);
         _increasePosition(params.yangId, pool.token1(), amount1);
 
+        ICHIVault vault = ICHIVault(_vault);
+        _poolPositions.set(pool, vault, params.yangId);
         emit UnSubscribe(params.yangId, params.chiId, amount0, amount1);
     }
 
-    function getAmounts(uint256 yangId, uint256 chiId, address user)
+    // views function
+    function positions(bytes32 key)
         external
         override
-        returns (uint256 amount0, uint256 amount1)
+        view
+        returns (
+            uint128 liquidity,
+            uint256 feeGrowthInside0LastX128,
+            uint256 feeGrowthInside1LastX128,
+            uint128 tokensOwed0,
+            uint128 tokensOwed1
+        )
     {
-        require(_chiManager != address(0), 'prepare chi manager first');
-        bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
-        require(_chiPositionSet.contains(key), 'missing chi position');
-
+        PoolPosition.Info memory position = _poolPositions[key];
         (
-            ,
-            ,
-            address _pool,
-            address _vault,
-            ,
-            ,
-            ,
-        ) = ICHIManager(_chiManager).chi(chiId);
-        ICHIVault vault = ICHIVault(_vault);
-        uint256 shares = _chiPositions[key].shares;
-
-        uint256 rangeCount = uint256(vault.getRangeCount());
-        CHI.VaultRange[] memory ranges = new CHI.VaultRange[](rangeCount);
-        for(uint256 i = 0; i < rangeCount; i++) {
-            (int24 tickLower, int24 tickUpper) = vault.getRange(i);
-            ranges[i] = CHI.VaultRange({tickLower: tickLower, tickUpper: tickUpper});
-        }
-        (amount0, amount1) = SharesHelper.calcAmountsFromShares(_pool, _vault, shares, ranges);
-        emit AmountsFromShares(yangId, chiId, user, amount0, amount1);
+            liquidity,
+            feeGrowthInside0LastX128,
+            feeGrowthInside1LastX128,
+            tokensOwed0,
+            tokensOwed1
+        ) = (
+            position.liquidity,
+            position.feeGrowthInside0LastX128,
+            position.feeGrowthInside1LastX128,
+            position.tokensOwed0,
+            position.tokensOwed1
+        );
     }
 
-    // views function
     function getShares(uint256 chiId, uint256 amount0Desired, uint256 amount1Desired)
         external
         override
@@ -319,5 +325,37 @@ contract YangNFTVault is
                 vault.totalSupply()
             );
         return (shares, amount0, amount1);
+    }
+
+    function getAmounts(uint256 yangId, uint256 chiId, address user)
+        external
+        view
+        override
+        returns (uint256 amount0, uint256 amount1)
+    {
+        require(_chiManager != address(0), 'prepare chi manager first');
+        bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
+        require(_chiPositionSet.contains(key), 'missing chi position');
+
+        (
+            ,
+            ,
+            address _pool,
+            address _vault,
+            ,
+            ,
+            ,
+        ) = ICHIManager(_chiManager).chi(chiId);
+        ICHIVault vault = ICHIVault(_vault);
+        IUniswapV3Pool pool = IUniswapV3Pool(_pool);
+        uint256 shares = _chiPositions[key].shares;
+        (amount0, amount1) = SharesHelper.calcAmountsFromShares(
+                pool,
+                vault,
+                address(this),
+                yangId,
+                shares
+        );
+        emit AmountsFromShares(yangId, chiId, user, amount0, amount1);
     }
 }

@@ -14,9 +14,12 @@ import '@uniswap/v3-core/contracts/libraries/TickMath.sol';
 import '@uniswap/v3-core/contracts/libraries/SafeCast.sol';
 import '@uniswap/v3-core/contracts/libraries/FixedPoint128.sol';
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import "@uniswap/v3-periphery/contracts/libraries/PositionKey.sol";
 
 import "./CHI.sol";
+import "./PoolPosition.sol";
 import "../interfaces/ICHIVault.sol";
+import "../interfaces/IYangNFTVault.sol";
 
 
 library SharesHelper {
@@ -66,31 +69,32 @@ library SharesHelper {
     }
 
     function calcAmountsFromShares(
-        address _pool,
-        address _vault,
-        uint256 shares,
-        CHI.VaultRange[] memory ranges
+        IUniswapV3Pool pool,
+        ICHIVault vault,
+        address yang,
+        uint256 yangId,
+        uint256 shares
     )
         internal
+        view
         returns (
             uint256 amount0,
             uint256 amount1
         )
     {
-        IUniswapV3Pool pool = IUniswapV3Pool(_pool);
-        ICHIVault vault = ICHIVault(_vault);
-        uint256 totalSupply = vault.totalSupply();
-        for (uint256 i = 0; i < ranges.length; i++) {
-            CHI.VaultRange memory _range = ranges[i];
-            uint128 liquidity = _positionLiquidity(pool, _vault, _range);
+        for (uint i = 0; i < vault.getRangeCount(); i++) {
+            (int24 tickLower, int24 tickUpper) = vault.getRange(i);
+            uint128 liquidity = _positionLiquidity(pool, address(vault), tickLower, tickUpper);
             if (liquidity > 0) {
                 (uint256 _amount0, uint256 _amount1) = _burnLiquidityShare(
                                                             pool,
-                                                            _vault,
+                                                            vault,
+                                                            yang,
+                                                            yangId,
                                                             liquidity,
                                                             shares,
-                                                            totalSupply,
-                                                            _range
+                                                            tickLower,
+                                                            tickUpper
                                                         );
                 amount0 = SafeMath.add(amount0, _amount0);
                 amount1 = SafeMath.add(amount1, _amount1);
@@ -99,14 +103,14 @@ library SharesHelper {
         IERC20 token0 = IERC20(pool.token0());
         IERC20 token1 = IERC20(pool.token1());
         uint256 unusedAmount0 = FullMath.mulDiv(
-                    SafeMath.sub(token0.balanceOf(_vault), vault.accruedProtocolFees0()),
+                    SafeMath.sub(token0.balanceOf(address(vault)), vault.accruedProtocolFees0()),
                     shares,
-                    totalSupply
+                    vault.totalSupply()
                 );
         uint256 unusedAmount1 = FullMath.mulDiv(
-                    SafeMath.sub(token1.balanceOf(_vault), vault.accruedProtocolFees1()),
+                    SafeMath.sub(token1.balanceOf(address(vault)), vault.accruedProtocolFees1()),
                     shares,
-                    totalSupply
+                    vault.totalSupply()
                 );
         amount0 = SafeMath.add(amount0, unusedAmount0);
         amount1 = SafeMath.add(amount1, unusedAmount1);
@@ -114,22 +118,26 @@ library SharesHelper {
 
     function _burnLiquidityShare(
         IUniswapV3Pool pool,
-        address vault,
+        ICHIVault vault,
+        address yang,
+        uint256 yangId,
         uint128 liquidity,
         uint256 shares,
-        uint256 totalSupply,
-        CHI.VaultRange memory range
-    ) internal returns (uint256 amount0, uint256 amount1)
+        int24 tickLower,
+        int24 tickUpper
+    ) private view returns (uint256 amount0, uint256 amount1)
     {
         int128 liquidityDelta = SafeCast.toInt128(
-                    -int256(FullMath.mulDiv(uint256(liquidity), shares, totalSupply)
+                    -int256(FullMath.mulDiv(uint256(liquidity), shares, vault.totalSupply())
                 ));
-        int24 tickLower = range.tickLower;
-        int24 tickUpper = range.tickUpper;
         if (liquidityDelta > 0) {
             // according to pool.burn calculate amount0, amount1
             (amount0, amount1) = _poolBurnShare(pool, tickLower, tickUpper, liquidityDelta);
-            (uint256 collect0, uint256 collect1) = _poolCollectFee(pool, vault, tickLower, tickUpper);
+
+            bytes32 poolPositionKey = PoolPosition.compute(yangId, address(vault), tickLower, tickUpper);
+            bytes32 positionKey = PositionKey.compute(address(vault), tickLower, tickUpper);
+
+            (uint256 collect0, uint256 collect1) = _poolCollectFee(pool, yang, poolPositionKey, positionKey);
             amount0 = SafeMath.add(amount0, collect0);
             amount1 = SafeMath.add(amount1, collect1);
         }
@@ -140,7 +148,7 @@ library SharesHelper {
         int24 tickLower,
         int24 tickUpper,
         int128 liquidityDelta
-    ) internal view returns (uint256 amount0, uint256 amount1)
+    ) private view returns (uint256 amount0, uint256 amount1)
     {
         (uint160 sqrtPriceX96, int24 tick, , , , , ) = pool.slot0();
         if (liquidityDelta != 0) {
@@ -171,30 +179,16 @@ library SharesHelper {
         }
     }
 
-    function _poolCollectFee(
-        IUniswapV3Pool pool,
-        address vault,
-        int24 tickLower,
-        int24 tickUpper
-    ) internal returns (uint256, uint256)
+    function _collect(
+        uint128 _liquidity,
+        uint256 _feeGrowthInside0LastX128,
+        uint256 _feeGrowthInside1LastX128,
+        uint128 tokensOwed0,
+        uint128 tokensOwed1,
+        uint256 feeGrowthInside0LastX128,
+        uint256 feeGrowthInside1LastX128
+    ) private pure returns (uint256, uint256)
     {
-        bytes32 key = keccak256(abi.encodePacked(vault, tickLower, tickUpper));
-        (
-            uint128 _liquidity,
-            uint256 _feeGrowthInside0LastX128,
-            uint256 _feeGrowthInside1LastX128,
-            uint128 tokensOwed0,
-            uint128 tokensOwed1
-        ) = pool.positions(key);
-
-        pool.burn(tickLower, tickUpper, 0);
-        (
-            ,
-            uint256 feeGrowthInside0LastX128,
-            uint256 feeGrowthInside1LastX128,
-            ,
-        ) = pool.positions(key);
-
         tokensOwed0 += uint128(
             FullMath.mulDiv(
                 feeGrowthInside0LastX128 - _feeGrowthInside0LastX128,
@@ -209,16 +203,49 @@ library SharesHelper {
                 FixedPoint128.Q128
             )
         );
-        return (tokensOwed0, tokensOwed1);
+        return (uint256(tokensOwed0), uint256(tokensOwed1));
+    }
+
+    function _poolCollectFee(
+        IUniswapV3Pool pool,
+        address yang,
+        bytes32 poolPositionKey,
+        bytes32 positionKey
+    ) private view returns (uint256, uint256)
+    {
+        (
+            uint128 _liquidity,
+            uint256 _feeGrowthInside0LastX128,
+            uint256 _feeGrowthInside1LastX128,
+            uint128 tokensOwed0,
+            uint128 tokensOwed1
+        ) = IYangNFTVault(yang).positions(poolPositionKey);
+
+        (
+            ,
+            uint256 feeGrowthInside0LastX128,
+            uint256 feeGrowthInside1LastX128,
+            ,
+        ) = pool.positions(positionKey);
+
+        return _collect(
+            _liquidity,
+            _feeGrowthInside0LastX128,
+            _feeGrowthInside1LastX128,
+            tokensOwed0,
+            tokensOwed1,
+            feeGrowthInside0LastX128,
+            feeGrowthInside1LastX128
+        );
     }
 
     function _positionLiquidity(
         IUniswapV3Pool pool,
         address vault,
-        CHI.VaultRange memory range
+        int24 tickLower,
+        int24 tickUpper
     ) internal view returns (uint128 liquidity)
     {
-        bytes32 key = keccak256(abi.encodePacked(vault, range.tickLower, range.tickUpper));
-        (liquidity, , , , ) = pool.positions(key);
+        (liquidity, , , , ) = pool.positions(PositionKey.compute(vault, tickLower, tickUpper));
     }
 }

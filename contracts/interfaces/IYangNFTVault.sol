@@ -53,9 +53,13 @@ interface IYangNFTVault {
         uint256 amount0Desired,
         uint256 amount1Desired
     ) external view returns (uint256, uint256, uint256);
+    function positions(bytes32)
+        external
+        view
+        returns (uint128, uint256, uint256, uint128, uint128);
     function getAmounts(
         uint256 yangId,
         uint256 chiId,
         address user
-    ) external returns (uint256, uint256);
+    ) external view returns (uint256, uint256);
 }
