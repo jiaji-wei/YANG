@@ -11,4 +11,9 @@ library CHI {
         uint24 fee;
         uint256 vaultFee;
     }
+
+    struct VaultRange {
+        int24 tickLower;
+        int24 tickUpper;
+    }
 }

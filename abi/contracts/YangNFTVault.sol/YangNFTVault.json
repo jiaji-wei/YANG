@@ -293,6 +293,40 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "yangId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chiId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getAmounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount0",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount1",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
       }
@@ -508,11 +542,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_chiAddr",
+        "name": "_chiManagerAddr",
         "type": "address"
       }
     ],
-    "name": "setCHI",
+    "name": "setCHIManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -16,8 +16,8 @@ import "./CHIVaultTest.sol";
 import "../libraries/CHI.sol";
 import "../libraries/YangPosition.sol";
 import "../interfaces/ICHIManager.sol";
-import "../interfaces/ICHIVault.sol";
 import "../interfaces/ICHIDepositCallBack.sol";
+import "../interfaces/test/ICHIVaultTest.sol";
 
 
 contract CHIManagerTest is ERC721, ICHIManager, ICHIDepositCallBack
@@ -101,7 +101,7 @@ contract CHIManagerTest is ERC721, ICHIManager, ICHIDepositCallBack
     {
         CHIData storage _chi_ = _chi[tokenId];
         require(_exists(tokenId), 'Invalid token ID');
-        ICHIVault _vault = ICHIVault(_chi_.vault);
+        ICHIVaultTest _vault = ICHIVaultTest(_chi_.vault);
         return (
             ownerOf(tokenId),
             _chi_.operator,
@@ -124,7 +124,7 @@ contract CHIManagerTest is ERC721, ICHIManager, ICHIDepositCallBack
     ) external override subscripting(tokenId) returns (uint256 shares, uint256 amount0, uint256 amount1)
     {
         CHIData storage _chi_ = _chi[tokenId];
-        (shares, amount0, amount1) = ICHIVault(_chi_.vault).deposit(yangId, amount0Desired, amount1Desired, amount0Min, amount1Min);
+        (shares, amount0, amount1) = ICHIVaultTest(_chi_.vault).deposit(yangId, amount0Desired, amount1Desired, amount0Min, amount1Min);
         bytes32 positionKey = keccak256(abi.encodePacked(yangId, tokenId));
         positions[positionKey].shares = positions[positionKey].shares.add(shares);
     }
@@ -142,7 +142,7 @@ contract CHIManagerTest is ERC721, ICHIManager, ICHIDepositCallBack
         YangPosition.Info storage _position = positions[positionKey];
         require(_position.shares >= shares, "s");
         CHIData storage _chi_ = _chi[tokenId];
-        (amount0, amount1) = ICHIVault(_chi_.vault).withdraw(yangId, shares, amount0Min, amount1Min, to);
+        (amount0, amount1) = ICHIVaultTest(_chi_.vault).withdraw(yangId, shares, amount0Min, amount1Min, to);
         _position.shares = positions[positionKey].shares.sub(shares);
     }
 

@@ -12,12 +12,12 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
-import "../interfaces/ICHIVault.sol";
 import "../interfaces/ICHIManager.sol";
 import "../interfaces/ICHIDepositCallBack.sol";
+import "../interfaces/test/ICHIVaultTest.sol";
 
 
-contract CHIVaultTest is ICHIVault {
+contract CHIVaultTest is ICHIVaultTest {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 

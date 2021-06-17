@@ -13,6 +13,8 @@ interface IYangNFTVault {
         address pool;
         address vault;
         uint256 shares;
+        uint256 amounts0;
+        uint256 amounts1;
     }
 
     struct SubscribeParam {
