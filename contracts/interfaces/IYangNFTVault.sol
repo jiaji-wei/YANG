@@ -4,16 +4,6 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 interface IYangNFTVault {
-    struct YangPosition {
-        address token;
-        uint256 balance;
-    }
-
-    struct ChiPosition {
-        address pool;
-        address vault;
-        uint256 shares;
-    }
 
     struct SubscribeParam {
         uint256 yangId;

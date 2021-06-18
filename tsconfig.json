@@ -4,11 +4,9 @@
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true,
     "outDir": "dist",
-    "typeRoots": ["./typechain", "./node_modules/@types", "./types"],
+    "typeRoots": ["./typechain", "./node_modules/@types"],
     "types": ["@nomiclabs/hardhat-ethers", "@nomiclabs/hardhat-waffle"],
-    "noImplicitAny": false
   },
   "include": ["./test"],
   "files": ["./hardhat.config.ts"]

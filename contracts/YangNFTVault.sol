@@ -4,18 +4,15 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./libraries/CHI.sol";
 import "./libraries/PoolPosition.sol";
-import "./libraries/SharesHelper.sol";
 import "./interfaces/IYangNFTVault.sol";
 import "./interfaces/ICHIManager.sol";
 import "./interfaces/ICHIVault.sol";
@@ -49,10 +46,10 @@ contract YangNFTVault is
     }
 
     // yangPosition
-    mapping(bytes32 => YangPosition) private _yangPositions;
+    mapping(bytes32 => uint256) private _yangPositions;
 
     // chiPosition
-    mapping(bytes32 => ChiPosition) private _chiPositions;
+    mapping(bytes32 => uint256) private _chiPositions;
 
     // poolPosition
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
@@ -119,22 +116,14 @@ contract YangNFTVault is
     function _increasePosition(uint256 tokenId, address token, uint256 amount) internal
     {
         bytes32 key = keccak256(abi.encodePacked(tokenId, msg.sender, token));
-        YangPosition storage position = _yangPositions[key];
-        if (position.balance > 0) {
-            position.balance = position.balance.add(amount);
-        } else {
-            _yangPositions[key] = YangPosition({
-                token: token,
-                balance: amount
-            });
-        }
+        _yangPositions[key] = _yangPositions[key].add(amount);
     }
 
     function _decreasePosition(uint256 tokenId, address token, uint256 amount) internal
     {
-        YangPosition storage position = _yangPositions[keccak256(abi.encodePacked(tokenId, msg.sender, token))];
-        require(position.balance >= amount, 'insufficient balance');
-        position.balance = position.balance.sub(amount);
+        bytes32 key = keccak256(abi.encodePacked(tokenId, msg.sender, token));
+        require(_yangPositions[key] >= amount, 'insufficient balance');
+        _yangPositions[key] = _yangPositions[key].sub(amount);
     }
 
     function _withdraw(uint256 tokenId, address token, uint256 amount)
@@ -177,8 +166,6 @@ contract YangNFTVault is
             ,
             ,
         ) = ICHIManager(chiManager).chi(params.chiId);
-        require(params.amount0Desired >= params.amount0Min);
-        require(params.amount1Desired >= params.amount1Min);
         (
             uint256 share,
             uint256 amount0,
@@ -196,17 +183,7 @@ contract YangNFTVault is
         _decreasePosition(params.yangId, pool.token1(), amount1);
 
         bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
-        ChiPosition storage position = _chiPositions[key];
-        if (position.shares > 0) {
-            position.shares = position.shares.add(share);
-        }
-        else {
-            _chiPositions[key] = ChiPosition({
-                pool: _pool,
-                vault: _vault,
-                shares: share
-            });
-        }
+        _chiPositions[key].add(share);
 
         ICHIVault vault = ICHIVault(_vault);
         _poolPositions.set(pool, vault, params.yangId);
@@ -231,8 +208,8 @@ contract YangNFTVault is
             ,
         ) = ICHIManager(chiManager).chi(params.chiId);
 
-        ChiPosition storage position = _chiPositions[keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender))];
-        require(position.shares >= params.shares, 'insufficient shares');
+        bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
+        require(_chiPositions[key] >= params.shares, 'insufficient shares');
         (
             uint256 amount0,
             uint256 amount1
@@ -244,7 +221,7 @@ contract YangNFTVault is
                 params.amount1Min,
                 address(this)
             );
-        position.shares = position.shares.sub(params.shares);
+        _chiPositions[key] = _chiPositions[key].sub(params.shares);
 
         IUniswapV3Pool pool = IUniswapV3Pool(_pool);
         _increasePosition(params.yangId, pool.token0(), amount0);
@@ -311,8 +288,8 @@ contract YangNFTVault is
         returns (uint256 amount0, uint256 amount1)
     {
         require(chiManager != address(0), 'CHI');
-        uint256 shares = _chiPositions[keccak256(abi.encodePacked(yangId, chiId, user))].shares;
-        if (shares > 0) {
+        bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
+        if (_chiPositions[key] > 0) {
             (
                 ,
                 ,
@@ -322,7 +299,7 @@ contract YangNFTVault is
                 ,
                 ,
             ) = ICHIManager(chiManager).chi(chiId);
-            (amount0, amount1) = IYangView(yangView).getAmounts(_pool, _vault, yangId, shares);
+            (amount0, amount1) = IYangView(yangView).getAmounts(_pool, _vault, yangId, _chiPositions[key]);
         }
     }
 }
