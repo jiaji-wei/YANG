@@ -102,7 +102,7 @@ library SharesHelper {
     {
         for (uint i = 0; i < vault.getRangeCount(); i++) {
             (int24 tickLower, int24 tickUpper) = vault.getRange(i);
-            uint128 liquidity = _position(pool, address(vault), tickLower, tickUpper);
+            uint128 liquidity = PoolPosition._poolLiquidity(pool, address(vault), tickLower, tickUpper);
             if (liquidity > 0) {
                 _burnShareParams memory params = _burnShareParams({
                                         pool: pool,
@@ -300,15 +300,5 @@ library SharesHelper {
             feeGrowthInside0LastX128,
             feeGrowthInside1LastX128
         );
-    }
-
-    function _position(
-        IUniswapV3Pool pool,
-        address vault,
-        int24 tickLower,
-        int24 tickUpper
-    ) internal view returns (uint128 liquidity)
-    {
-        (liquidity, , , , ) = pool.positions(PositionKey.compute(vault, tickLower, tickUpper));
     }
 }

@@ -29,8 +29,6 @@ contract YangNFTVault is
 {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-    using Counters for Counters.Counter;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
     using PoolPosition for mapping(bytes32 => PoolPosition.Info);
     using PoolPosition for PoolPosition.Info;
 
@@ -42,9 +40,9 @@ contract YangNFTVault is
     }
 
     // nft and Yang tokenId
-    mapping(address => uint256) private _userTokenTracker;
+
+    uint256 private _nextId = 1;
     mapping(bytes32 => bool) private _userExists;
-    Counters.Counter private _tokenIdTracker;
     modifier isAuthorizedForToken(uint256 tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), 'not approved');
         _;
@@ -85,14 +83,11 @@ contract YangNFTVault is
         override
         returns (uint256 tokenId)
     {
-        tokenId = _tokenIdTracker.current();
-        bytes32 key = keccak256(abi.encodePacked(recipient, tokenId));
+        bytes32 key = keccak256(abi.encodePacked(recipient, (tokenId = _nextId++)));
         require(_userExists[key] == false, 'OO');
 
         // _mint function check tokenId existence
         _mint(recipient, tokenId);
-        _tokenIdTracker.increment();
-        _userTokenTracker[recipient] = tokenId;
         _userExists[key] = true;
 
         emit MintYangNFT(recipient, tokenId);
@@ -137,8 +132,7 @@ contract YangNFTVault is
 
     function _decreasePosition(uint256 tokenId, address token, uint256 amount) internal
     {
-        bytes32 key = keccak256(abi.encodePacked(tokenId, msg.sender, token));
-        YangPosition storage position = _yangPositions[key];
+        YangPosition storage position = _yangPositions[keccak256(abi.encodePacked(tokenId, msg.sender, token))];
         require(position.balance >= amount, 'insufficient balance');
         position.balance = position.balance.sub(amount);
     }
@@ -236,9 +230,8 @@ contract YangNFTVault is
             ,
             ,
         ) = ICHIManager(chiManager).chi(params.chiId);
-        bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
 
-        ChiPosition storage position = _chiPositions[key];
+        ChiPosition storage position = _chiPositions[keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender))];
         require(position.shares >= params.shares, 'insufficient shares');
         (
             uint256 amount0,
@@ -318,8 +311,7 @@ contract YangNFTVault is
         returns (uint256 amount0, uint256 amount1)
     {
         require(chiManager != address(0), 'CHI');
-        bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
-        uint256 shares = _chiPositions[key].shares;
+        uint256 shares = _chiPositions[keccak256(abi.encodePacked(yangId, chiId, user))].shares;
         if (shares > 0) {
             (
                 ,
