@@ -59,33 +59,30 @@ library SharesHelper {
             uint256 amount1
         )
     {
-        uint256 total0 = totalAmount0;
-        uint256 total1 = totalAmount1;
-
-        assert(totalSupply == 0 || total0 > 0 || total1 > 0);
+        assert(totalSupply == 0 || totalAmount0 > 0 || totalAmount1 > 0);
 
         if (totalSupply == 0) {
             // For first deposit, just use the amounts desired
             amount0 = amount0Desired;
             amount1 = amount1Desired;
             shares = Math.max(amount0, amount1);
-        } else if (total0 == 0) {
+        } else if (totalAmount0 == 0) {
             amount1 = amount1Desired;
-            shares = FullMath.mulDiv(amount1, totalSupply, total1);
-        } else if (total1 == 0) {
+            shares = FullMath.mulDiv(amount1, totalSupply, totalAmount1);
+        } else if (totalAmount1 == 0) {
             amount0 = amount0Desired;
-            shares = FullMath.mulDiv(amount0, totalSupply, total0);
+            shares = FullMath.mulDiv(amount0, totalSupply, totalAmount0);
         } else {
             uint256 cross = Math.min(
-                                SafeMath.mul(amount0Desired, total1),
-                                SafeMath.mul(amount1Desired, total0)
+                                SafeMath.mul(amount0Desired, totalAmount1),
+                                SafeMath.mul(amount1Desired, totalAmount0)
                             );
             require(cross > 0, "c");
 
             // Round up amounts
-            amount0 = SafeMath.add(SafeMath.div(SafeMath.sub(cross, 1), total1), 1);
-            amount1 = SafeMath.add(SafeMath.div(SafeMath.sub(cross, 1), total0), 1);
-            shares = SafeMath.div(FullMath.mulDiv(cross, totalSupply, total0), total1);
+            amount0 = SafeMath.add(SafeMath.div(SafeMath.sub(cross, 1), totalAmount1), 1);
+            amount1 = SafeMath.add(SafeMath.div(SafeMath.sub(cross, 1), totalAmount0), 1);
+            shares = SafeMath.div(FullMath.mulDiv(cross, totalSupply, totalAmount0), totalAmount1);
         }
     }
 
@@ -148,14 +145,12 @@ library SharesHelper {
                     ));
         if (liquidityDelta > 0) {
             // according to pool.burn calculate amount0, amount1
-            int24 tickLower = params.tickLower;
-            int24 tickUpper = params.tickUpper;
             uint256 yangId = params.yangId;
             (uint256 collect0, uint256 collect1) = _poolBurn(
-                    params.pool, tickLower, tickUpper, liquidityDelta);
+                    params.pool, params.tickLower, params.tickUpper, liquidityDelta);
 
-            bytes32 key0 = PoolPosition.compute(yangId, address(params.vault), tickLower, tickUpper);
-            bytes32 key1 = PositionKey.compute(address(params.vault), tickLower, tickUpper);
+            bytes32 key0 = PoolPosition.compute(yangId, address(params.vault), params.tickLower, params.tickUpper);
+            bytes32 key1 = PositionKey.compute(address(params.vault), params.tickLower, params.tickUpper);
 
             _poolCollectParams memory _params = _poolCollectParams({
                         pool: params.pool,
@@ -165,7 +160,7 @@ library SharesHelper {
                         collect0: collect0,
                         collect1: collect1
                     });
-            (uint256 tokensOwed0, uint256 tokensOwed1) = _poolCollect(_params);
+            (uint256 tokensOwed0, uint256 tokensOwed1) = _poolCollect(params.tickLower, params.tickUpper, _params);
             amount0 = collect0 > tokensOwed0 ? tokensOwed0 : collect0;
             amount1 = collect1 > tokensOwed1 ? tokensOwed1 : collect1;
         }
@@ -237,7 +232,50 @@ library SharesHelper {
         return (uint256(tokensOwed0), uint256(tokensOwed1));
     }
 
-    function _poolCollect(_poolCollectParams memory params)
+    function _getFeeGrowthInside(IUniswapV3Pool pool, bytes32 key, int24 tickLower, int24 tickUpper)
+        private view returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128)
+    {
+        (
+            ,
+            uint256 _feeGrowthInside0LastX128,
+            uint256 _feeGrowthInside1LastX128,
+            ,
+        ) = pool.positions(key);
+        (, int24 tickCurrent, , , , , ) = pool.slot0();
+
+        // calculate fee growth below
+        (,,uint256 feeGrowthOutside0X128Lower, uint256 feeGrowthOutside1X128Lower,,,,) = pool.ticks(tickLower);
+        uint256 feeGrowthBelow0X128;
+        uint256 feeGrowthBelow1X128;
+        if (tickCurrent >= tickLower) {
+            feeGrowthBelow0X128 = feeGrowthOutside0X128Lower;
+            feeGrowthBelow1X128 = feeGrowthOutside1X128Lower;
+        } else {
+            feeGrowthBelow0X128 = _feeGrowthInside0LastX128 - feeGrowthOutside0X128Lower;
+            feeGrowthBelow1X128 = _feeGrowthInside1LastX128 - feeGrowthOutside1X128Lower;
+        }
+
+        (,,uint256 feeGrowthOutside0X128Upper, uint256 feeGrowthOutside1X128Upper,,,,) = pool.ticks(tickUpper);
+
+        // calculate fee growth above
+        uint256 feeGrowthAbove0X128;
+        uint256 feeGrowthAbove1X128;
+        if (tickCurrent < tickUpper) {
+            feeGrowthAbove0X128 = feeGrowthOutside0X128Upper;
+            feeGrowthAbove1X128 = feeGrowthOutside1X128Upper;
+        } else {
+            feeGrowthAbove0X128 = _feeGrowthInside0LastX128 - feeGrowthOutside0X128Upper;
+            feeGrowthAbove1X128 = _feeGrowthInside1LastX128 - feeGrowthOutside1X128Upper;
+        }
+
+        feeGrowthInside0X128 = _feeGrowthInside0LastX128 - feeGrowthBelow0X128 - feeGrowthAbove0X128;
+        feeGrowthInside1X128 = _feeGrowthInside1LastX128 - feeGrowthBelow1X128 - feeGrowthAbove1X128;
+    }
+
+    function _poolCollect(
+        int24 tickLower,
+        int24 tickUpper,
+        _poolCollectParams memory params)
         private view returns (uint256, uint256)
     {
         (
@@ -249,11 +287,9 @@ library SharesHelper {
         ) = IYangNFTVault(params.yang).positions(params.key0);
 
         (
-            ,
             uint256 feeGrowthInside0LastX128,
-            uint256 feeGrowthInside1LastX128,
-            ,
-        ) = params.pool.positions(params.key1);
+            uint256 feeGrowthInside1LastX128
+        ) = _getFeeGrowthInside(params.pool, params.key1, tickLower, tickUpper);
 
         return _collect(
             _liquidity,

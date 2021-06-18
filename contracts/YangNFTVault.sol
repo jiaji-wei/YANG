@@ -51,11 +51,9 @@ contract YangNFTVault is
 
     // yangPosition
     mapping(bytes32 => YangPosition) private _yangPositions;
-    EnumerableSet.Bytes32Set private _yangPositionSet;
 
     // chiPosition
     mapping(bytes32 => ChiPosition) private _chiPositions;
-    EnumerableSet.Bytes32Set private _chiPositionSet;
 
     // poolPosition
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
@@ -80,7 +78,7 @@ contract YangNFTVault is
     {
         tokenId = _tokenIdTracker.current();
         bytes32 key = keccak256(abi.encodePacked(recipient, tokenId));
-        require(_userExists[key] == false, "already exists");
+        require(_userExists[key] == false, 'OO');
 
         // _mint function check tokenId existence
         _mint(recipient, tokenId);
@@ -99,8 +97,8 @@ contract YangNFTVault is
         uint256 amount1
     ) external override isAuthorizedForToken(tokenId) nonReentrant
     {
-        require(amount0 > 0, 'deposit need nonzero amount0');
-        require(amount1 > 0, 'deposit need nonzero amount1');
+        require(amount0 > 0, 'NZ');
+        require(amount1 > 0, 'NZ');
         _deposit(tokenId, token0, amount0);
         _deposit(tokenId, token1, amount1);
         emit Deposit(tokenId, token0, token1);
@@ -117,11 +115,10 @@ contract YangNFTVault is
     function _increasePosition(uint256 tokenId, address token, uint256 amount) internal
     {
         bytes32 key = keccak256(abi.encodePacked(tokenId, msg.sender, token));
-        if (_yangPositionSet.contains(key)) {
-            YangPosition storage position = _yangPositions[key];
+        YangPosition storage position = _yangPositions[key];
+        if (position.balance > 0) {
             position.balance = position.balance.add(amount);
         } else {
-            _yangPositionSet.add(key);
             _yangPositions[key] = YangPosition({
                 token: token,
                 balance: amount
@@ -132,7 +129,6 @@ contract YangNFTVault is
     function _decreasePosition(uint256 tokenId, address token, uint256 amount) internal
     {
         bytes32 key = keccak256(abi.encodePacked(tokenId, msg.sender, token));
-        require(_yangPositionSet.contains(key), 'missing position');
         YangPosition storage position = _yangPositions[key];
         require(position.balance >= amount, 'insufficient balance');
         position.balance = position.balance.sub(amount);
@@ -154,8 +150,8 @@ contract YangNFTVault is
         uint256 amount1
     ) external override isAuthorizedForToken(tokenId) nonReentrant
     {
-        require(amount0 > 0, 'withdraw need nonzero amount0');
-        require(amount1 > 0, 'withdraw need nonzero amount1');
+        require(amount0 > 0, 'NZ');
+        require(amount1 > 0, 'NZ');
         _withdraw(tokenId, token0, amount0);
         _withdraw(tokenId, token1, amount1);
         emit Withdraw(tokenId, token0, token1);
@@ -168,7 +164,7 @@ contract YangNFTVault is
         nonReentrant
         returns (uint256)
     {
-        require(chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'CHI');
         (
             ,
             ,
@@ -178,8 +174,8 @@ contract YangNFTVault is
             ,
             ,
         ) = ICHIManager(chiManager).chi(params.chiId);
-        require(params.amount0Desired >= params.amount0Min, 'desired amount insufficient');
-        require(params.amount1Desired >= params.amount1Min, 'desired amount insufficient');
+        require(params.amount0Desired >= params.amount0Min);
+        require(params.amount1Desired >= params.amount1Min);
         (
             uint256 share,
             uint256 amount0,
@@ -197,19 +193,15 @@ contract YangNFTVault is
         _decreasePosition(params.yangId, pool.token1(), amount1);
 
         bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
-        if (_chiPositionSet.contains(key)) {
-            ChiPosition storage position = _chiPositions[key];
+        ChiPosition storage position = _chiPositions[key];
+        if (position.shares > 0) {
             position.shares = position.shares.add(share);
-            position.amounts0 = position.amounts0.add(amount0);
-            position.amounts1 = position.amounts1.add(amount1);
-        } else {
-            _chiPositionSet.add(key);
+        }
+        else {
             _chiPositions[key] = ChiPosition({
                 pool: _pool,
                 vault: _vault,
-                shares: share,
-                amounts0: amount0,
-                amounts1: amount1
+                shares: share
             });
         }
 
@@ -225,7 +217,7 @@ contract YangNFTVault is
         isAuthorizedForToken(params.yangId)
         nonReentrant
     {
-        require(chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'CHI');
         (
             ,
             ,
@@ -236,7 +228,6 @@ contract YangNFTVault is
             ,
         ) = ICHIManager(chiManager).chi(params.chiId);
         bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
-        require(_chiPositionSet.contains(key), 'missing chi position');
 
         ChiPosition storage position = _chiPositions[key];
         require(position.shares >= params.shares, 'insufficient shares');
@@ -252,8 +243,6 @@ contract YangNFTVault is
                 address(this)
             );
         position.shares = position.shares.sub(params.shares);
-        position.amounts0 = position.amounts0.sub(amount0);
-        position.amounts1 = position.amounts1.sub(amount1);
 
         IUniswapV3Pool pool = IUniswapV3Pool(_pool);
         _increasePosition(params.yangId, pool.token0(), amount0);
@@ -299,7 +288,7 @@ contract YangNFTVault is
         view
         returns (uint256, uint256, uint256)
     {
-        require(chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'CHI');
         (
             ,
             ,
@@ -333,9 +322,8 @@ contract YangNFTVault is
         override
         returns (uint256 amount0, uint256 amount1)
     {
-        require(chiManager != address(0), 'prepare chi manager first');
+        require(chiManager != address(0), 'CHI');
         bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
-        require(_chiPositionSet.contains(key), 'missing chi position');
 
         (
             ,
