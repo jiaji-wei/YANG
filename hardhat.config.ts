@@ -4,6 +4,7 @@ import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-etherscan'
 import 'hardhat-contract-sizer'
 import 'hardhat-abi-exporter';
+import "@nomiclabs/hardhat-etherscan";
 
 import { task, HardhatUserConfig } from 'hardhat/config'
 
