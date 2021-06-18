@@ -19,6 +19,7 @@ import "./libraries/SharesHelper.sol";
 import "./interfaces/IYangNFTVault.sol";
 import "./interfaces/ICHIManager.sol";
 import "./interfaces/ICHIVault.sol";
+import "./interfaces/IYangView.sol";
 
 
 contract YangNFTVault is
@@ -61,6 +62,9 @@ contract YangNFTVault is
     // chiManager
     address private chiManager;
 
+    // yangView
+    address public yangView;
+
     constructor() ERC721("YANG's Asset Manager", "YANG")
     {
         owner = msg.sender;
@@ -69,6 +73,11 @@ contract YangNFTVault is
     function setCHIManager(address _chiManager) external override onlyOwner
     {
         chiManager = _chiManager;
+    }
+
+    function setYangView(address _yangView) external override onlyOwner
+    {
+        yangView = _yangView;
     }
 
     function mint(address recipient)
@@ -286,7 +295,7 @@ contract YangNFTVault is
         external
         override
         view
-        returns (uint256, uint256, uint256)
+        returns (uint256)
     {
         require(chiManager != address(0), 'CHI');
         (
@@ -298,22 +307,8 @@ contract YangNFTVault is
             ,
             ,
         ) = ICHIManager(chiManager).chi(chiId);
-
-        ICHIVault vault = ICHIVault(_vault);
-        (uint256 totalAmount0, uint256 totalAmount1) = vault.getTotalAmounts();
-
-        (
-            uint256 shares,
-            uint256 amount0,
-            uint256 amount1
-        ) = SharesHelper.calcSharesAndAmounts(
-                totalAmount0,
-                totalAmount1,
-                amount0Desired,
-                amount1Desired,
-                vault.totalSupply()
-            );
-        return (shares, amount0, amount1);
+        (uint256 shares,,) = IYangView(yangView).getSharesAndAmounts(_vault, amount0Desired, amount1Desired);
+        return shares;
     }
 
     function getAmounts(uint256 yangId, uint256 chiId, address user)
@@ -324,25 +319,18 @@ contract YangNFTVault is
     {
         require(chiManager != address(0), 'CHI');
         bytes32 key = keccak256(abi.encodePacked(yangId, chiId, user));
-
-        (
-            ,
-            ,
-            address _pool,
-            address _vault,
-            ,
-            ,
-            ,
-        ) = ICHIManager(chiManager).chi(chiId);
-        ICHIVault vault = ICHIVault(_vault);
-        IUniswapV3Pool pool = IUniswapV3Pool(_pool);
         uint256 shares = _chiPositions[key].shares;
-        (amount0, amount1) = SharesHelper.calcAmountsFromShares(
-                pool,
-                vault,
-                address(this),
-                yangId,
-                shares
-        );
+        if (shares > 0) {
+            (
+                ,
+                ,
+                address _pool,
+                address _vault,
+                ,
+                ,
+                ,
+            ) = ICHIManager(chiManager).chi(chiId);
+            (amount0, amount1) = IYangView(yangView).getAmounts(_pool, _vault, yangId, shares);
+        }
     }
 }
