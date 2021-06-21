@@ -165,6 +165,10 @@ contract YangNFTVault is
             ,
             ,
         ) = ICHIManager(chiManager).chi(params.chiId);
+
+        IERC20(pool.token0()).safeApprove(chiManager, params.amount0Desired);
+        IERC20(pool.token1()).safeApprove(chiManager, params.amount1Desired);
+
         (
             uint256 share,
             uint256 amount0,
@@ -180,6 +184,9 @@ contract YangNFTVault is
         IUniswapV3Pool pool = IUniswapV3Pool(_pool);
         _decreasePosition(params.yangId, pool.token0(), amount0);
         _decreasePosition(params.yangId, pool.token1(), amount1);
+
+        IERC20(pool.token0()).safeApprove(chiManager, 0);
+        IERC20(pool.token1()).safeApprove(chiManager, 0);
 
         bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
         _chiPositions[key].add(share);
