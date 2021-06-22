@@ -30,8 +30,17 @@ contract YangNFTVault is
 
     // owner
     address public owner;
+    address public gov;
+    address private chiManager;
+    address public yangView;
+
     modifier onlyOwner {
         require(msg.sender == owner, 'only owner');
+        _;
+    }
+
+    modifier onlyGov {
+        require(msg.sender == gov, 'only gov');
         _;
     }
 
@@ -53,15 +62,10 @@ contract YangNFTVault is
     // poolPosition
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
 
-    // chiManager
-    address private chiManager;
-
-    // yangView
-    address public yangView;
-
-    constructor() ERC721("YANG's Asset Manager", "YANG")
+    constructor(address _gov) ERC721("YANG's Asset Manager", "YANG")
     {
         owner = msg.sender;
+        gov = _gov;
     }
 
     function setCHIManager(address _chiManager) external override onlyOwner
@@ -77,6 +81,7 @@ contract YangNFTVault is
     function mint(address recipient)
         external
         override
+        onlyGov
         returns (uint256 tokenId)
     {
         bytes32 key = keccak256(abi.encodePacked(recipient, (tokenId = _nextId++)));
@@ -166,6 +171,7 @@ contract YangNFTVault is
             ,
         ) = ICHIManager(chiManager).chi(params.chiId);
 
+        IUniswapV3Pool pool = IUniswapV3Pool(_pool);
         IERC20(pool.token0()).safeApprove(chiManager, params.amount0Desired);
         IERC20(pool.token1()).safeApprove(chiManager, params.amount1Desired);
 
@@ -181,7 +187,6 @@ contract YangNFTVault is
                 params.amount0Min,
                 params.amount1Min
             );
-        IUniswapV3Pool pool = IUniswapV3Pool(_pool);
         _decreasePosition(params.yangId, pool.token0(), amount0);
         _decreasePosition(params.yangId, pool.token1(), amount1);
 
@@ -189,7 +194,7 @@ contract YangNFTVault is
         IERC20(pool.token1()).safeApprove(chiManager, 0);
 
         bytes32 key = keccak256(abi.encodePacked(params.yangId, params.chiId, msg.sender));
-        _chiPositions[key].add(share);
+        _chiPositions[key] = _chiPositions[key].add(share);
 
         ICHIVault vault = ICHIVault(_vault);
         _poolPositions.set(pool, vault, params.yangId);
@@ -224,8 +229,7 @@ contract YangNFTVault is
                 params.chiId,
                 params.shares,
                 params.amount0Min,
-                params.amount1Min,
-                address(this)
+                params.amount1Min
             );
         _chiPositions[key] = _chiPositions[key].sub(params.shares);
 
