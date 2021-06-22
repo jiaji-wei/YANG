@@ -47,7 +47,7 @@ contract YangNFTVault is
     // nft and Yang tokenId
 
     uint256 private _nextId = 1;
-    mapping(bytes32 => bool) private _userExists;
+    mapping(address => bool) private _userExists;
     modifier isAuthorizedForToken(uint256 tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), 'not approved');
         _;
@@ -84,12 +84,10 @@ contract YangNFTVault is
         onlyGov
         returns (uint256 tokenId)
     {
-        bytes32 key = keccak256(abi.encodePacked(recipient, (tokenId = _nextId++)));
-        require(_userExists[key] == false, 'OO');
-
+        require(_userExists[recipient] == false, 'OO');
         // _mint function check tokenId existence
-        _mint(recipient, tokenId);
-        _userExists[key] = true;
+        _mint(recipient, (tokenId = _nextId++));
+        _userExists[recipient] = true;
 
         emit MintYangNFT(recipient, tokenId);
     }

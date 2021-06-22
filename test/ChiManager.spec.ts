@@ -36,7 +36,6 @@ import {
 } from '../typechain';
 import { INonfungiblePositionManager } from '../types/INonfungiblePositionManager';
 
-
 const provider = waffle.provider;
 const createFixtureLoader = waffle.createFixtureLoader;
 type LoadFixtureFunction = ReturnType<typeof createFixtureLoader>;
