@@ -182,6 +182,7 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
     )) as TestCHIManager;
 
     await chiVaultDeployer.setCHIManager(chiManager.address);
+    await yangNFT.setYangView(yangView.address);
     await yangNFT.setCHIManager(chiManager.address);
     await yangView.setYangNFT(yangNFT.address);
 

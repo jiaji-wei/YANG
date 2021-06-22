@@ -92,6 +92,17 @@ contract YangNFTVault is
         emit MintYangNFT(recipient, tokenId);
     }
 
+    function yangPositions(address recipient, address token, uint256 tokenId)
+        external
+        override
+        view
+        returns (uint256)
+    {
+        require(_isApprovedOrOwner(recipient, tokenId), 'not approved');
+        bytes32 key = keccak256(abi.encodePacked(tokenId, recipient, token));
+        return _yangPositions[key];
+    }
+
     function deposit(
         uint256 tokenId,
         address token0,

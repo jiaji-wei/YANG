@@ -172,11 +172,71 @@ describe('YangNFTVault', () => {
             chivault = (await ethers.getContractAt('TestCHIVault', vault)) as TestCHIVault;
 
             // deposit to YANG
-            await erc20_helper.ensureBalanceAndApprovals(trader, [token0, token1, token2], MaxUint128, yangNFT.address)
-            let _yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
+            await erc20_helper.ensureBalanceAndApprovals(trader, [token0, token1, token2], convertTo18Decimals(10000), yangNFT.address)
+            const _yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
             await yangNFT.connect(gov).mint(trader.address);
-            let yangId = _yangId.toNumber();
+            yangId = _yangId.toNumber();
             await yangNFT.connect(trader).deposit(yangId, token0.address, tokenAmount0, token1.address, tokenAmount1)
+        });
+
+        it('trader amount', async () => {
+            expect(await token0.balanceOf(trader.address)).to.eq(0);
+            expect(await token1.balanceOf(trader.address)).to.eq(0);
+        })
+
+        it('getShares', async() => {
+            expect(await token0.balanceOf(yangNFT.address)).to.eq(tokenAmount0)
+            expect(await token1.balanceOf(yangNFT.address)).to.eq(tokenAmount1)
+
+            const amountDesired = convertTo18Decimals(1000);
+            const calShare = await yangNFT.getShares(chiId, amountDesired, amountDesired);
+            const subscribeParam = {
+                yangId: yangId,
+                chiId: chiId,
+                amount0Desired: convertTo18Decimals(1000),
+                amount1Desired: convertTo18Decimals(1000),
+                amount0Min: 0,
+                amount1Min: 0,
+            }
+            const _share = await yangNFT.connect(trader).callStatic.subscribe(subscribeParam)
+            await yangNFT.connect(trader).subscribe(subscribeParam);
+            await expect(_share).to.eq(calShare);
+        })
+
+        it('getAmounts', async () => {
+            expect(await token0.balanceOf(trader.address)).to.eq(0)
+            expect(await token1.balanceOf(trader.address)).to.eq(0)
+
+            const [amount0, amount1] = await yangNFT.getAmounts(yangId, chiId, trader.address);
+            await expect(amount0).to.eq(0);
+            await expect(amount1).to.eq(0);
+
+            const subscribeParam = {
+                yangId: yangId,
+                chiId: chiId,
+                amount0Desired: convertTo18Decimals(1000),
+                amount1Desired: convertTo18Decimals(1000),
+                amount0Min: 0,
+                amount1Min: 0,
+            }
+            const _share = await yangNFT.connect(trader).callStatic.subscribe(subscribeParam)
+            await yangNFT.connect(trader).subscribe(subscribeParam);
+
+            const [v1, v2] = await yangNFT.getAmounts(yangId, chiId, trader.address);
+            const before1 = await yangNFT.yangPositions(trader.address, token0.address, yangId);
+            const before2 = await yangNFT.yangPositions(trader.address, token1.address, yangId);
+            const unsubscribeParam = {
+                yangId: yangId,
+                chiId: chiId,
+                shares: _share,
+                amount0Min: convertTo18Decimals(1000),
+                amount1Min: convertTo18Decimals(1000),
+            }
+            await yangNFT.connect(trader).unsubscribe(unsubscribeParam);
+            const after1 = await yangNFT.yangPositions(trader.address, token0.address, yangId);
+            const after2 = await yangNFT.yangPositions(trader.address, token1.address, yangId);
+            await expect(after1.sub(before1)).to.eq(v1);
+            await expect(after2.sub(before2)).to.eq(v2);
         })
     })
 })
