@@ -289,6 +289,26 @@ contract YangNFTVault is
         (amount0, amount1) = ICHIVault(_vault).getTotalAmounts();
     }
 
+    function getCHIAccruedFees(uint256 chiId)
+        external
+        override
+        view
+        returns (uint256 fee0, uint256 fee1)
+    {
+        require(chiManager != address(0), 'CHI');
+        (
+            ,
+            ,
+            ,
+            address _vault,
+            ,
+            ,
+            ,
+        ) = ICHIManager(chiManager).chi(chiId);
+        fee0 = ICHIVault(_vault).accruedProtocolFees0();
+        fee1 = ICHIVault(_vault).accruedProtocolFees1();
+    }
+
     function yangPositions(address recipient, address token, uint256 tokenId)
         external
         override
@@ -299,7 +319,6 @@ contract YangNFTVault is
         bytes32 key = keccak256(abi.encodePacked(tokenId, recipient, token));
         return _yangPositions[key];
     }
-
 
     function getShares(uint256 chiId, uint256 amount0Desired, uint256 amount1Desired)
         external

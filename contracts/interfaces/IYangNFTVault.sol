@@ -50,6 +50,7 @@ interface IYangNFTVault {
         address user
     ) external view returns (uint256, uint256);
     function getCHITotalAmounts(uint256 chiId) external view returns(uint256, uint256);
+    function getCHIAccruedFees(uint256 chiId) external view returns (uint256 fee0, uint256 fee1);
 
     // positions
     function yangPositions(address recipient, address token, uint256) external returns (uint256);
