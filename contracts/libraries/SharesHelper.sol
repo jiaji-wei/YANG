@@ -284,7 +284,7 @@ library SharesHelper {
             uint256 _feeGrowthInside1LastX128,
             uint128 tokensOwed0,
             uint128 tokensOwed1
-        ) = IYangNFTVault(params.yang).positions(params.key0);
+        ) = IYangNFTVault(params.yang).poolPositions(params.key0);
 
         (
             uint256 feeGrowthInside0LastX128,

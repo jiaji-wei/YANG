@@ -92,17 +92,6 @@ contract YangNFTVault is
         emit MintYangNFT(recipient, tokenId);
     }
 
-    function yangPositions(address recipient, address token, uint256 tokenId)
-        external
-        override
-        view
-        returns (uint256)
-    {
-        require(_isApprovedOrOwner(recipient, tokenId), 'not approved');
-        bytes32 key = keccak256(abi.encodePacked(tokenId, recipient, token));
-        return _yangPositions[key];
-    }
-
     function deposit(
         uint256 tokenId,
         address token0,
@@ -252,7 +241,8 @@ contract YangNFTVault is
     }
 
     // views function
-    function positions(bytes32 key)
+
+    function poolPositions(bytes32 key)
         external
         override
         view
@@ -279,6 +269,37 @@ contract YangNFTVault is
             position.tokensOwed1
         );
     }
+
+    function getCHITotalAmounts(uint256 chiId)
+        external
+        override
+        view
+        returns (uint256 amount0, uint256 amount1)
+    {
+        require(chiManager != address(0), 'CHI');
+        (
+            ,
+            ,
+            ,
+            address _vault,
+            ,
+            ,
+            ,
+        ) = ICHIManager(chiManager).chi(chiId);
+        (amount0, amount1) = ICHIVault(_vault).getTotalAmounts();
+    }
+
+    function yangPositions(address recipient, address token, uint256 tokenId)
+        external
+        override
+        view
+        returns (uint256)
+    {
+        require(_isApprovedOrOwner(recipient, tokenId), 'not approved');
+        bytes32 key = keccak256(abi.encodePacked(tokenId, recipient, token));
+        return _yangPositions[key];
+    }
+
 
     function getShares(uint256 chiId, uint256 amount0Desired, uint256 amount1Desired)
         external
