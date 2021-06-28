@@ -31,6 +31,7 @@ contract YangNFTVault is
     // owner
     address public owner;
     address public gov;
+    address public nextgov;
     address private chiManager;
     address public yangView;
 
@@ -76,6 +77,16 @@ contract YangNFTVault is
     function setYangView(address _yangView) external override onlyOwner
     {
         yangView = _yangView;
+    }
+
+    function acceptGovernance() external {
+        require(msg.sender == nextgov, "next gov");
+        gov = msg.sender;
+        nextgov = address(0);
+    }
+
+    function setGovernance(address _governance) external onlyGov {
+        nextgov = _governance;
     }
 
     function mint(address recipient)

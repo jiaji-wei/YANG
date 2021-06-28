@@ -35,19 +35,20 @@ const config: HardhatUserConfig = {
         allowUnlimitedContractSize: false,
         },
         mainnet: {
-        url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
         },
         ropsten: {
-        url: `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            url: `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`,
         },
         rinkeby: {
-        url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            //accounts: [`${process.env.RINKEBY_PRIVATE_KEY}`, ],
         },
         goerli: {
-        url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
         },
         kovan: {
-        url: `https://kovan.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            url: `https://kovan.infura.io/v3/${process.env.INFURA_API_KEY}`,
         },
     },
     etherscan: {
