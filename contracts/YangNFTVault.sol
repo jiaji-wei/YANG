@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/cryptography/MerkleProof.sol";
 
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
@@ -35,13 +36,16 @@ contract YangNFTVault is
     address private chiManager;
     address public yangView;
 
+    bytes32 public merkleRoot;
+
     modifier onlyOwner {
         require(msg.sender == owner, 'only owner');
         _;
     }
 
-    modifier onlyGov {
-        require(msg.sender == gov, 'only gov');
+    modifier onlyGovs(bytes32[] calldata merkleProof) {
+        bytes32 node = keccak256(abi.encodePacked(msg.sender));
+        require(MerkleProof.verify(merkleProof, merkleRoot, node), 'only govs');
         _;
     }
 
@@ -63,10 +67,10 @@ contract YangNFTVault is
     // poolPosition
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
 
-    constructor(address _gov) ERC721("YANG's Asset Manager", "YANG")
+    constructor(bytes32 _merkleRoot) ERC721("YANG's Asset Manager", "YANG")
     {
         owner = msg.sender;
-        gov = _gov;
+        merkleRoot = _merkleRoot;
     }
 
     function setCHIManager(address _chiManager) external override onlyOwner
@@ -79,20 +83,14 @@ contract YangNFTVault is
         yangView = _yangView;
     }
 
-    function acceptGovernance() external {
-        require(msg.sender == nextgov, "next gov");
-        gov = msg.sender;
-        nextgov = address(0);
+    function updateMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
+        merkleRoot = _merkleRoot;
     }
 
-    function setGovernance(address _governance) external onlyGov {
-        nextgov = _governance;
-    }
-
-    function mint(address recipient)
+    function mint(address recipient, bytes32[] calldata merkleProof)
         external
         override
-        onlyGov
+        onlyGovs(merkleProof)
         returns (uint256 tokenId)
     {
         require(_userExists[recipient] == false, 'OO');

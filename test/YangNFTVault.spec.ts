@@ -22,6 +22,7 @@ import {
     ERC20Helper,
 } from './common/utilities';
 import { AccountsFixture } from './common/accounts';
+import parseWhiteListMap from './common/parse-whitelist-map';
 
 import {
     IUniswapV3Factory,
@@ -45,10 +46,12 @@ let loadFixture: LoadFixtureFunction;
 describe('YangNFTVault', () => {
     const wallets = provider.getWallets();
     const accounts = new AccountsFixture(wallets, provider);
-    const gov = accounts.allGov();
+    const govs = accounts.allGovs();
+    const chigov = accounts.chiGov();
     const other = accounts.otherTrader0();
     const trader = accounts.otherTrader1();
     const erc20_helper = new ERC20Helper();
+    const info = parseWhiteListMap(govs.map((wallet) => wallet.address));
 
     let context: ShareFixtureType;
     let yangNFT: YangNFTVault;
@@ -90,7 +93,7 @@ describe('YangNFTVault', () => {
         token1: string,
         fee: number,
         vaultFee: number,
-        caller: Wallet = gov
+        caller: Wallet = chigov
     ): Promise<{tokenId: number, vault: string}>
     {
         const mintParams = {
@@ -110,15 +113,19 @@ describe('YangNFTVault', () => {
     describe('Mint YANG NFT', async () => {
         describe('success cases', () => {
             it('mint success', async () => {
-                const yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
-                await yangNFT.connect(gov).mint(trader.address);
+                const gov = govs[0];
+                const proof = info.whitelist[gov.address].proof;
+                const yangId = await yangNFT.connect(gov).callStatic.mint(trader.address, proof);
+                await yangNFT.connect(gov).mint(trader.address, proof);
                 expect(trader.address).to.eq(await yangNFT.ownerOf(yangId));
                 expect(await yangNFT.balanceOf(trader.address)).to.eq(1);
             })
 
             it('success approve and transfer', async () => {
-                const yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
-                await yangNFT.connect(gov).mint(trader.address);
+                const gov = govs[0];
+                const proof = info.whitelist[gov.address].proof;
+                const yangId = await yangNFT.connect(gov).callStatic.mint(trader.address, proof);
+                await yangNFT.connect(gov).mint(trader.address, proof);
 
                 await expect(yangNFT.transferFrom(trader.address, other.address, yangId))
                     .to.be.revertedWith('ERC721: transfer caller is not owner nor approved');
@@ -129,15 +136,17 @@ describe('YangNFTVault', () => {
         })
         describe('fail cases', () => {
             it('only gov can mint NFT', async () => {
-                await expect(yangNFT.connect(other).mint(trader.address))
-                    .to.be.revertedWith('only gov');
+                await expect(yangNFT.connect(other).mint(trader.address, []))
+                    .to.be.revertedWith('only govs');
             })
             it('each user can only mint one NFT', async () => {
-                const yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
-                await yangNFT.connect(gov).mint(trader.address);
+                const gov = govs[1];
+                const proof = info.whitelist[gov.address].proof;
+                const yangId = await yangNFT.connect(gov).callStatic.mint(trader.address, proof);
+                await yangNFT.connect(gov).mint(trader.address, proof);
                 expect(trader.address).to.eq(await yangNFT.ownerOf(yangId));
                 expect(await yangNFT.balanceOf(trader.address)).to.eq(1);
-                await expect(yangNFT.connect(gov).mint(trader.address)).to.be.revertedWith('OO');
+                await expect(yangNFT.connect(gov).mint(trader.address, proof)).to.be.revertedWith('OO');
             })
         })
     })
@@ -167,14 +176,17 @@ describe('YangNFTVault', () => {
             // wait for manager test
             await router.mint(pool0, minTick, maxTick, convertTo18Decimals(1))
 
-            const { tokenId, vault } = await mintCHI(gov.address, token0.address, token1.address, FeeAmount.MEDIUM, vaultFee)
+            const { tokenId, vault } = await mintCHI(chigov.address, token0.address, token1.address, FeeAmount.MEDIUM, vaultFee)
             chiId = tokenId
             chivault = (await ethers.getContractAt('TestCHIVault', vault)) as TestCHIVault;
 
             // deposit to YANG
             await erc20_helper.ensureBalanceAndApprovals(trader, [token0, token1, token2], convertTo18Decimals(10000), yangNFT.address)
-            const _yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
-            await yangNFT.connect(gov).mint(trader.address);
+
+            const gov = govs[2];
+            const proof = info.whitelist[gov.address].proof;
+            const _yangId = await yangNFT.connect(gov).callStatic.mint(trader.address, proof);
+            await yangNFT.connect(gov).mint(trader.address, proof);
             yangId = _yangId.toNumber();
             await yangNFT.connect(trader).deposit(yangId, token0.address, tokenAmount0, token1.address, tokenAmount1)
         });

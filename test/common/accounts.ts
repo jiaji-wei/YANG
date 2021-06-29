@@ -3,11 +3,11 @@ import { Wallet } from 'ethers';
 
 
 const WALLET_USER_INDEXES = {
-    CHI_DEPLOYER: 5,
-    ALL_GOV: 6,
-    YANG_DEPLOYER: 8,
-    OTHER_TRADER0: 9,
-    OTHER_TRADER1: 10,
+    CHI_GOV: 3,
+    CHI_DEPLOYER: 4,
+    YANG_DEPLOYER: 5,
+    OTHER_TRADER0: 6,
+    OTHER_TRADER1: 7,
 }
 
 export class AccountsFixture {
@@ -23,8 +23,13 @@ export class AccountsFixture {
         return this._getAccount(WALLET_USER_INDEXES.YANG_DEPLOYER);
     }
 
-    allGov() {
-        return this._getAccount(WALLET_USER_INDEXES.ALL_GOV);
+    chiGov() {
+        return this._getAccount(WALLET_USER_INDEXES.CHI_GOV);
+
+    }
+
+    allGovs() {
+        return [this.wallets[8], this.wallets[9], this.wallets[10]];
     }
 
     chiDeployer() {

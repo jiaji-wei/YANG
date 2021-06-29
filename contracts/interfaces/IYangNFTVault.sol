@@ -32,7 +32,7 @@ interface IYangNFTVault {
 
     function setCHIManager(address) external;
     function setYangView(address) external;
-    function mint(address recipient) external returns (uint256 tokenId);
+    function mint(address recipient, bytes32[] calldata merkleProof) external returns (uint256 tokenId);
     function deposit(uint256 tokenId, address token0, uint256 amount0, address token1, uint256 amount1) external;
     function withdraw(uint256 tokenId, address token0, uint256 amount0, address token1, uint256 amount1) external;
     function subscribe(SubscribeParam memory params) external returns (uint256 share);

@@ -1,6 +1,7 @@
 import { Fixture } from 'ethereum-waffle';
 import { constants, BigNumber } from 'ethers';
 import { ethers, waffle } from 'hardhat';
+import { Wallet } from '@ethersproject/wallet'
 
 import UniswapV3Pool from '@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json';
 import UniswapV3FactoryJson from '@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json';
@@ -21,7 +22,8 @@ import {
 } from "../../typechain";
 import { AccountsFixture } from './accounts';
 import { encodePriceSqrt } from './utilities';
-import { FeeAmount, MAX_GAS_LIMIT } from './constants'
+import { FeeAmount, MAX_GAS_LIMIT } from './constants';
+import parseWhiteListMap from './parse-whitelist-map';
 
 import WETH9 from '../../types/WETH9.json';
 import { IWETH9 } from '../../types/IWETH9';
@@ -164,11 +166,15 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
     const accounts = new AccountsFixture(wallets, provider);
     const yangDeployer = accounts.yangDeployer();
     const chiDeployer = accounts.chiDeployer();
-    const allGov = accounts.allGov();
+    const chiGov = accounts.chiGov();
+    const allGovs: Wallet[] = accounts.allGovs();
+    const _allGovs = allGovs.map((wallet) => wallet.address);
+    const info = parseWhiteListMap(_allGovs);
 
     const yangNFTFactory = await ethers.getContractFactory('YangNFTVault', yangDeployer);
     const yangViewFactory = await ethers.getContractFactory('YangView', yangDeployer);
-    const yangNFT = (await yangNFTFactory.deploy(allGov.address)) as YangNFTVault;
+
+    const yangNFT = (await yangNFTFactory.deploy(info.merkleRoot)) as YangNFTVault;
     const yangView = (await yangViewFactory.deploy()) as YangView;
 
     const chiVaultDeployerFactory = await ethers.getContractFactory('TestCHIVaultDeployer', chiDeployer);
@@ -178,7 +184,7 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
         factory.address,
         yangNFT.address,
         chiVaultDeployer.address,
-        allGov.address
+        chiGov.address
     )) as TestCHIManager;
 
     await chiVaultDeployer.setCHIManager(chiManager.address);
