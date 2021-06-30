@@ -93,7 +93,8 @@ describe('YangNFTVault', () => {
         token1: string,
         fee: number,
         vaultFee: number,
-        caller: Wallet = chigov
+        caller: Wallet,
+        proof: string[]
     ): Promise<{tokenId: number, vault: string}>
     {
         const mintParams = {
@@ -103,8 +104,8 @@ describe('YangNFTVault', () => {
             fee,
             vaultFee
         };
-        const { tokenId, vault } = await chiManager.connect(caller).callStatic.mint(mintParams);
-        await chiManager.connect(caller).mint(mintParams);
+        const { tokenId, vault } = await chiManager.connect(caller).callStatic.mint(mintParams, proof);
+        await chiManager.connect(caller).mint(mintParams, proof);
         return {
             tokenId: tokenId.toNumber(),
             vault
@@ -176,7 +177,13 @@ describe('YangNFTVault', () => {
             // wait for manager test
             await router.mint(pool0, minTick, maxTick, convertTo18Decimals(1))
 
-            const { tokenId, vault } = await mintCHI(chigov.address, token0.address, token1.address, FeeAmount.MEDIUM, vaultFee)
+            const { tokenId, vault } = await mintCHI(chigov.address,
+                                                     token0.address,
+                                                     token1.address,
+                                                     FeeAmount.MEDIUM,
+                                                     vaultFee,
+                                                     chigov,
+                                                     info.whitelist[chigov.address].proof)
             chiId = tokenId
             chivault = (await ethers.getContractAt('TestCHIVault', vault)) as TestCHIVault;
 

@@ -17,9 +17,9 @@
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "_gov",
-        "type": "address"
+        "internalType": "bytes32",
+        "name": "_merkleRoot",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "nonpayable",
@@ -155,13 +155,6 @@
       }
     ],
     "name": "CHIDepositCallback",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "acceptGovernance",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -322,19 +315,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "chigov",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -419,6 +399,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "merkleRoot",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "components": [
@@ -451,6 +444,11 @@
         "internalType": "struct ICHIManager.MintParams",
         "name": "params",
         "type": "tuple"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "merkleProof",
+        "type": "bytes32[]"
       }
     ],
     "name": "mint",
@@ -484,7 +482,7 @@
   },
   {
     "inputs": [],
-    "name": "nextgov",
+    "name": "owner",
     "outputs": [
       {
         "internalType": "address",
@@ -662,19 +660,6 @@
       }
     ],
     "name": "setApprovalForAll",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_governance",
-        "type": "address"
-      }
-    ],
-    "name": "setGovernance",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -904,6 +889,19 @@
         "type": "uint256"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_merkleRoot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "updateMerkleRoot",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },

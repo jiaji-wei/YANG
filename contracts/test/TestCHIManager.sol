@@ -8,6 +8,7 @@ import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/cryptography/MerkleProof.sol";
 
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
@@ -41,22 +42,23 @@ contract TestCHIManager is ERC721, ICHIManager {
     /// @dev The token ID data
     mapping(uint256 => CHIData) private _chi;
 
+    address public owner;
     address public v3Factory;
     address public yangNFT;
     address public deployer;
-    address public chigov;
-    address public nextgov;
+    bytes32 public merkleRoot;
 
     constructor(
         address _v3Factory,
         address _yangNFT,
         address _deployer,
-        address _gov
+        bytes32 _merkleRoot
     ) ERC721("YIN's Uniswap V3 Positions Manager", 'CHI') {
+        owner = msg.sender;
         v3Factory = _v3Factory;
         yangNFT = _yangNFT;
         deployer = _deployer;
-        chigov = _gov;
+        merkleRoot = _merkleRoot;
     }
 
     modifier onlyYANG {
@@ -64,19 +66,15 @@ contract TestCHIManager is ERC721, ICHIManager {
         _;
     }
 
-    modifier onlyGov {
-        require(msg.sender == chigov, 'gov');
+    modifier onlyOwner {
+        require(msg.sender == owner, 'only owner');
         _;
     }
 
-    function acceptGovernance() external {
-        require(msg.sender == nextgov, 'next gov');
-        chigov = msg.sender;
-        nextgov = address(0);
-    }
-
-    function setGovernance(address _governance) external onlyGov {
-        nextgov = _governance;
+    modifier onlyGovs(bytes32[] calldata merkleProof) {
+        bytes32 node = keccak256(abi.encodePacked(msg.sender));
+        require(MerkleProof.verify(merkleProof, merkleRoot, node), 'only govs');
+        _;
     }
 
     uint256 private _tempChiId;
@@ -84,6 +82,11 @@ contract TestCHIManager is ERC721, ICHIManager {
         _tempChiId = chiId;
         _;
         _tempChiId = 0;
+    }
+
+    function updateMerkleRoot(bytes32 _merkleRoot) external onlyOwner
+    {
+        merkleRoot = _merkleRoot;
     }
 
     function chi(uint256 tokenId)
@@ -116,7 +119,12 @@ contract TestCHIManager is ERC721, ICHIManager {
         );
     }
 
-    function mint(MintParams calldata params) external override onlyGov returns (uint256 tokenId, address vault) {
+    function mint(MintParams calldata params, bytes32[] calldata merkleProof)
+        external
+        override
+        onlyGovs(merkleProof)
+        returns (uint256 tokenId, address vault)
+    {
         address uniswapPool = IUniswapV3Factory(v3Factory).getPool(params.token0, params.token1, params.fee);
 
         require(uniswapPool != address(0), 'Non-existent pool');

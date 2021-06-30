@@ -28,7 +28,8 @@ interface ICHIManager is ICHIDepositCallBack {
             uint256 totalShares
         );
 
-    function mint(MintParams calldata params) external returns (uint256 tokenId, address vault);
+    function mint(MintParams calldata params, bytes32[] calldata merkleProof)
+        external returns (uint256 tokenId, address vault);
 
     function subscribe(
         uint256 yangId,

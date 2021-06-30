@@ -228,6 +228,11 @@
           "internalType": "struct ICHIManager.MintParams",
           "name": "params",
           "type": "tuple"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "merkleProof",
+          "type": "bytes32[]"
         }
       ],
       "name": "mint",

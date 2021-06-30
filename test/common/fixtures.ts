@@ -166,7 +166,6 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
     const accounts = new AccountsFixture(wallets, provider);
     const yangDeployer = accounts.yangDeployer();
     const chiDeployer = accounts.chiDeployer();
-    const chiGov = accounts.chiGov();
     const allGovs: Wallet[] = accounts.allGovs();
     const _allGovs = allGovs.map((wallet) => wallet.address);
     const info = parseWhiteListMap(_allGovs);
@@ -184,7 +183,7 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
         factory.address,
         yangNFT.address,
         chiVaultDeployer.address,
-        chiGov.address
+        info.merkleRoot
     )) as TestCHIManager;
 
     await chiVaultDeployer.setCHIManager(chiManager.address);

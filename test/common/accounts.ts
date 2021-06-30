@@ -29,7 +29,10 @@ export class AccountsFixture {
     }
 
     allGovs() {
-        return [this.wallets[8], this.wallets[9], this.wallets[10]];
+        return [this.wallets[3],
+                this.wallets[8],
+                this.wallets[9],
+                this.wallets[10]];
     }
 
     chiDeployer() {
