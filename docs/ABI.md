@@ -2,6 +2,15 @@
 
 ## Interfaces
 
+### Mint
+```
+function mint(address recipient) external returns (uint256 tokenId);
+```
+
+* address recipient: mint yang tokenId for recipient
+
+event **MintYangNFT(address indexed recipient, uint256 indexed tokenId)**
+
 ### deposit
 
 ```
