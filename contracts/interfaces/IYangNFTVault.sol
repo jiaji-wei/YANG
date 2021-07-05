@@ -59,5 +59,5 @@ interface IYangNFTVault {
         view
         returns (uint128, uint256, uint256, uint128, uint128);
 
-    function getTokenId() external view returns (uint256);
+    function getTokenId(address recipient) external view returns (uint256);
 }

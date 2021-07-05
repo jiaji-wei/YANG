@@ -89,8 +89,8 @@ contract YangNFTVault is
         nextgov = _governance;
     }
 
-    function getTokenId() external view override returns (uint256) {
-        return _usersMap[msg.sender];
+    function getTokenId(address recipient) external view override returns (uint256) {
+        return _usersMap[recipient];
     }
 
     function mint(address recipient)

@@ -5,10 +5,10 @@
 ### getTokenId
 
 ```
-function getTokenId() external view return (uin256);
+function getTokenId(address recipient) external view return (uin256);
 ```
 
-return msg.sender tokenId >= 1
+return recipient tokenId >= 1
 
 ### Mint
 ```
