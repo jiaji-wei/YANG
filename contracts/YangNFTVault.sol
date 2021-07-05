@@ -96,7 +96,6 @@ contract YangNFTVault is
     function mint(address recipient)
         external
         override
-        onlyGov
         returns (uint256 tokenId)
     {
         require(_usersMap[recipient] == 0, 'OO');

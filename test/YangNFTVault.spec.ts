@@ -126,12 +126,14 @@ describe('YangNFTVault', () => {
                 await yangNFT.connect(other).transferFrom(trader.address, other.address, yangId);
                 expect(other.address).to.eq(await yangNFT.ownerOf(yangId));
             })
+            it('every one can mint NFT', async () => {
+                const yangId = await yangNFT.connect(trader).callStatic.mint(trader.address);
+                await yangNFT.connect(trader).mint(trader.address);
+                expect(trader.address).to.eq(await yangNFT.ownerOf(yangId));
+                expect(await yangNFT.balanceOf(trader.address)).to.eq(1);
+            })
         })
         describe('fail cases', () => {
-            it('only gov can mint NFT', async () => {
-                await expect(yangNFT.connect(other).mint(trader.address))
-                    .to.be.revertedWith('only gov');
-            })
             it('each user can only mint one NFT', async () => {
                 const yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
                 await yangNFT.connect(gov).mint(trader.address);
