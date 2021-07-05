@@ -48,7 +48,7 @@ contract YangNFTVault is
     // nft and Yang tokenId
 
     uint256 private _nextId = 1;
-    mapping(address => bool) private _userExists;
+    mapping(address => uint256) private _usersMap;
     modifier isAuthorizedForToken(uint256 tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), 'not approved');
         _;
@@ -89,16 +89,20 @@ contract YangNFTVault is
         nextgov = _governance;
     }
 
+    function getTokenId() external view override returns (uint256) {
+        return _usersMap[msg.sender];
+    }
+
     function mint(address recipient)
         external
         override
         onlyGov
         returns (uint256 tokenId)
     {
-        require(_userExists[recipient] == false, 'OO');
+        require(_usersMap[recipient] == 0, 'OO');
         // _mint function check tokenId existence
         _mint(recipient, (tokenId = _nextId++));
-        _userExists[recipient] = true;
+        _usersMap[recipient] = tokenId;
 
         emit MintYangNFT(recipient, tokenId);
     }

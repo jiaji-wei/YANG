@@ -2,6 +2,14 @@
 
 ## Interfaces
 
+### getTokenId
+
+```
+function getTokenId() external view return (uin256);
+```
+
+return msg.sender tokenId >= 1
+
 ### Mint
 ```
 function mint(address recipient) external returns (uint256 tokenId);
