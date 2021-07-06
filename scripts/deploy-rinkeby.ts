@@ -1,23 +1,23 @@
 import { ethers } from 'hardhat';
 
-const Governance = '0x5a0350846f321524d0fBe0C6A94027E89bE23bE5';
-
 
 async function main() {
     const YangViewFactory = await ethers.getContractFactory('YangView');
     const YangNFTFactory = await ethers.getContractFactory('YangNFTVault');
     const YangView = await YangViewFactory.deploy();
     await YangView.deployed();
-    const YangNFT = await YangNFTFactory.deploy(Governance);
+    const YangNFT = await YangNFTFactory.deploy();
     await YangNFT.deployed();
 
     console.log('YANGView:')
-    console.log(YangView.address) // 0x261F76d553139EA652C78211bdc68a3dF2c64B41
+    console.log(YangView.address) // 0x2Ba5310482a9Fbb242633d8a82027af41FB4B579
     console.log(YangView.deployTransaction.hash);
 
     console.log('YANGNFTVault')
-    console.log(YangNFT.address) // 0xbB7F54758979166A34C40788Ed45796b0569aFD9
+    console.log(YangNFT.address) // 0xd1309B94DAcA28bc402694a60Aee53089cfff5E5
     console.log(YangNFT.deployTransaction.hash);
+
+    await YangNFT.setYangView(YangView.address);
 }
 
 main()
