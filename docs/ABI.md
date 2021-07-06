@@ -2,13 +2,6 @@
 
 ## Interfaces
 
-### getTokenId
-
-```
-function getTokenId(address recipient) external view return (uin256);
-```
-
-return recipient tokenId >= 1
 
 ### Mint
 ```
@@ -23,7 +16,6 @@ event **MintYangNFT(address indexed recipient, uint256 indexed tokenId)**
 
 ```
 function deposit(
-    uint256 tokenId,
     address token0,
     uint256 amount0,
     address token1,
@@ -31,13 +23,10 @@ function deposit(
 ) external;
 ```
 
-* uint256 tokenId: YangNFTVault NFT tokenId
 * address token0: deposit token0
 * uint256 amount0: deposit amount0
 * address token1: deposit token1
 * uint256 amount1: deposit amount1
-
-Event **Deposit(uint256 indexed tokenId, address indexed token0, address indexed token1)**
 
 ### withdraw
 
@@ -52,18 +41,17 @@ function withdraw(
 
 ```
 
-* uint256 tokenId: YangNFTVault NFT tokenId
 * address token0: withdraw token0
 * uint256 amount0: withdraw amount0
 * address token1: withdraw token1
 * uint256 amount1: withdraw amount1
 
-Event **Withdraw(uint256 indexed tokenId, address indexed token0, address indexed token1)**
-
 ### subscribe
 
 ```
-function subscribe(SubscribeParam memory params) returns (uint256 share) external;
+function subscribe(SubscribeParam memory params)
+    external
+    returns (uint256 amount0, uint256 amount1, uint256 share);
 ```
 
 * uint256 share: user subscribe amount share prove
@@ -135,7 +123,6 @@ get how many **shares** and actually cost **amount0** and **amount1**
 function getAmounts(
     uint256 yangId,
     uint256 chiId,
-    address user
 ) external returns (uint256 amount0, uint256 amount1);
 ```
 
@@ -143,5 +130,56 @@ To calcualte token0 **amount0** and token1 **amount1**
 
 * uint256 yangId: YangNFTVault NFT tokenId
 * uint256 chiId: CHI Management NFT tokenId
-* address user: calculate user amounts
 
+
+### yangPositions
+
+```
+function yangPositions(uint256 yangId, uint256 chiId)
+    external
+    override
+    view
+    returns (uint256 amount0, uint256 amount1, uint256 shares)
+```
+
+Get subscribe amount0, amount1 and shares
+
+* uint256 yangId: YangNFTVault NFT tokenId
+* uint256 chiId: CHI Management NFT tokenId
+
+
+### getCHITotalAmount
+
+```
+
+function getCHITotalAmounts(uint256 chiId)
+    external
+    override
+    view
+    returns (uint256 amount0, uint256 amount1)
+```
+
+* uint256 chiId: CHI Management NFT tokenId
+
+
+### GetCHIAccuredFees(uint256 chiId)
+
+```
+function getCHIAccruedFees(uint256 chiId)
+    external
+    override
+    view
+    returns (uint256 fee0, uint256 fee1)
+
+```
+
+* uint256 chiId: CHI Management NFT tokenId
+
+
+### getTokenId
+
+```
+function getTokenId(address recipient) external view return (uin256);
+```
+
+* address recipient: user address to get YANG tokenId
