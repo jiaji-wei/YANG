@@ -116,8 +116,8 @@ contract YangNFTVault is
         _vaults[key0] = _vaults[key0].sub(amount0);
         _vaults[key1] = _vaults[key1].sub(amount1);
 
-        IERC20(token0).safeTransferFrom(address(this), msg.sender, amount0);
-        IERC20(token1).safeTransferFrom(address(this), msg.sender, amount1);
+        IERC20(token0).safeTransfer(msg.sender, amount0);
+        IERC20(token1).safeTransfer(msg.sender, amount1);
     }
 
     function _subscribe(

@@ -178,7 +178,6 @@ describe('YangNFTVault', () => {
             const _yangId = await yangNFT.connect(gov).callStatic.mint(trader.address);
             await yangNFT.connect(gov).mint(trader.address);
             yangId = _yangId.toNumber();
-            //await yangNFT.connect(trader).deposit(yangId, token0.address, tokenAmount0, token1.address, tokenAmount1)
         });
 
         it('trader amount', async () => {

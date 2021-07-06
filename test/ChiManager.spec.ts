@@ -277,7 +277,7 @@ describe('CHIManager', () => {
             let token1Amount = await yangNFT.connect(trader).vaults(token1.address);
             await expect(token0Amount).to.eq(convertTo18Decimals(1000));
             await expect(token1Amount).to.eq(convertTo18Decimals(1000));
-            //await yangNFT.connect(trader).withdraw(token0.address, token0Amount, token1.address, token1Amount);
+            await yangNFT.connect(trader).withdraw(token0.address, token0Amount, token1.address, token1Amount);
         }
       })
 
