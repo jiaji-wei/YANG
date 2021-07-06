@@ -168,7 +168,7 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
 
     const yangNFTFactory = await ethers.getContractFactory('YangNFTVault', yangDeployer);
     const yangViewFactory = await ethers.getContractFactory('YangView', yangDeployer);
-    const yangNFT = (await yangNFTFactory.deploy(allGov.address)) as YangNFTVault;
+    const yangNFT = (await yangNFTFactory.deploy()) as YangNFTVault;
     const yangView = (await yangViewFactory.deploy()) as YangView;
 
     const chiVaultDeployerFactory = await ethers.getContractFactory('TestCHIVaultDeployer', chiDeployer);
