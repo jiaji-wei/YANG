@@ -174,6 +174,7 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
     function unsubscribe(IYangNFTVault.UnSubscribeParam memory params)
         external
         override
+        nonReentrant
         isAuthorizedForToken(params.yangId)
     {
         require(chiManager != address(0), 'CHI');
