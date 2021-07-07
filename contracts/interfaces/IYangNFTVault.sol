@@ -31,13 +31,6 @@ interface IYangNFTVault {
 
     function mint(address recipient) external returns (uint256 tokenId);
 
-    function deposit(
-        address token0,
-        uint256 amount0,
-        address token1,
-        uint256 amount1
-    ) external;
-
     function withdraw(
         address token0,
         uint256 amount0,

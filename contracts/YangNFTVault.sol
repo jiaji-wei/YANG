@@ -75,7 +75,7 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         uint256 amount0,
         address token1,
         uint256 amount1
-    ) public override {
+    ) internal {
         require(amount0 > 0, 'NZ');
         require(amount1 > 0, 'NZ');
         IERC20(token0).safeTransferFrom(msg.sender, address(this), amount0);
@@ -87,8 +87,7 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         uint256 amount0,
         address token1,
         uint256 amount1
-    ) public override {
-
+    ) public override nonReentrant {
         uint256 yangId = getTokenId(msg.sender);
         if (amount0 > 0) {
             bytes32 key0 = keccak256(abi.encodePacked(yangId, token0));
