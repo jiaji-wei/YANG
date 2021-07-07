@@ -11,7 +11,6 @@ import NonfungibleTokenPositionDescriptor from '@uniswap/v3-periphery/artifacts/
 import {
     TestERC20,
     YangNFTVault,
-    YangView,
     TestCHIVaultDeployer,
     TestCHIVault,
     TestCHIManager,
@@ -144,7 +143,6 @@ export type ShareFixtureType = {
     pool0: string,
     pool1: string,
     yangNFT: YangNFTVault,
-    yangView: YangView,
     chiVaultDeployer: TestCHIVaultDeployer,
     chiManager: TestCHIManager,
 }
@@ -167,9 +165,7 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
     const allGov = accounts.allGov();
 
     const yangNFTFactory = await ethers.getContractFactory('YangNFTVault', yangDeployer);
-    const yangViewFactory = await ethers.getContractFactory('YangView', yangDeployer);
     const yangNFT = (await yangNFTFactory.deploy()) as YangNFTVault;
-    const yangView = (await yangViewFactory.deploy()) as YangView;
 
     const chiVaultDeployerFactory = await ethers.getContractFactory('TestCHIVaultDeployer', chiDeployer);
     const chiManagerFactory = await ethers.getContractFactory('TestCHIManager', chiDeployer);
@@ -182,9 +178,7 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
     )) as TestCHIManager;
 
     await chiVaultDeployer.setCHIManager(chiManager.address);
-    await yangNFT.setYangView(yangView.address);
     await yangNFT.setCHIManager(chiManager.address);
-    await yangView.setYangNFT(yangNFT.address);
 
     const fee = FeeAmount.MEDIUM;
     await nft.createAndInitializePoolIfNecessary(
@@ -213,7 +207,6 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
         pool0,
         pool1,
         yangNFT,
-        yangView,
         chiVaultDeployer,
         chiManager,
     };

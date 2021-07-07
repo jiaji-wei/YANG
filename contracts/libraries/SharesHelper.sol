@@ -301,4 +301,50 @@ library SharesHelper {
             feeGrowthInside1LastX128
         );
     }
+
+    function getSharesAndAmounts(
+        address _vault,
+        uint256 amount0Desired,
+        uint256 amount1Desired
+    )
+        internal
+        view
+        returns (uint256, uint256, uint256)
+    {
+        ICHIVault vault = ICHIVault(_vault);
+        (uint256 totalAmount0, uint256 totalAmount1) = vault.getTotalAmounts();
+        (
+            uint256 shares,
+            uint256 amount0,
+            uint256 amount1
+        ) = calcSharesAndAmounts(
+                totalAmount0,
+                totalAmount1,
+                amount0Desired,
+                amount1Desired,
+                vault.totalSupply()
+            );
+        return (shares, amount0, amount1);
+    }
+
+    function getAmounts(
+        address _pool,
+        address _vault,
+        uint256 yangId,
+        uint256 shares
+    )
+        internal
+        view
+        returns (uint256 amount0, uint256 amount1)
+    {
+        ICHIVault vault = ICHIVault(_vault);
+        IUniswapV3Pool pool = IUniswapV3Pool(_pool);
+        (amount0, amount1) = calcAmountsFromShares(
+                pool,
+                vault,
+                msg.sender,
+                yangId,
+                shares
+        );
+    }
 }

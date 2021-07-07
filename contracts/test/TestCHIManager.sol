@@ -170,7 +170,7 @@ contract TestCHIManager is ERC721, ICHIManager {
         YangPosition.Info storage _position = positions[positionKey];
         require(_position.shares >= shares, 's');
         CHIData storage _chi_ = _chi[tokenId];
-        (, , amount0, amount1) = ICHIVault(_chi_.vault).withdraw(yangId, shares, amount0Min, amount1Min, yangNFT);
+        (amount0, amount1) = ICHIVault(_chi_.vault).withdraw(yangId, shares, amount0Min, amount1Min, yangNFT);
         _position.shares = positions[positionKey].shares.sub(shares);
     }
 

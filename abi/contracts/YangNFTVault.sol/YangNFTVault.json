@@ -588,19 +588,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_yangView",
-        "type": "address"
-      }
-    ],
-    "name": "setYangView",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "components": [
           {
             "internalType": "uint256",
@@ -905,19 +892,6 @@
         "internalType": "uint256",
         "name": "shares",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "yangView",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",

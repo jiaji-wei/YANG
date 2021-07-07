@@ -1,3 +1,4 @@
+artifacts/
 cache/
 crytic-export/
 node_modules/

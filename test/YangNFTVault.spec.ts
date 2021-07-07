@@ -28,7 +28,6 @@ import {
     IUniswapV3Pool,
     TestERC20,
     YangNFTVault,
-    YangView,
     TestCHIVaultDeployer,
     TestCHIVault,
     TestCHIManager,
@@ -52,7 +51,6 @@ describe('YangNFTVault', () => {
 
     let context: ShareFixtureType;
     let yangNFT: YangNFTVault;
-    let yangView: YangView;
     let token0: TestERC20, token1: TestERC20, token2: TestERC20;
     let chiVaultDeployer: TestCHIVaultDeployer;
     let chiManager: TestCHIManager;
@@ -74,7 +72,6 @@ describe('YangNFTVault', () => {
         pool1 = context.pool1;
         nft = context.nft;
         yangNFT = context.yangNFT;
-        yangView = context.yangView;
         chiVaultDeployer = context.chiVaultDeployer;
         chiManager = context.chiManager;
         token0 = context.token0;
