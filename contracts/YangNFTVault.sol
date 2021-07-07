@@ -88,17 +88,18 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         address token1,
         uint256 amount1
     ) public override {
-        require(amount0 > 0, 'NZ');
-        require(amount1 > 0, 'NZ');
 
         uint256 yangId = getTokenId(msg.sender);
-        bytes32 key0 = keccak256(abi.encodePacked(yangId, token0));
-        bytes32 key1 = keccak256(abi.encodePacked(yangId, token1));
-        _vaults[key0] = _vaults[key0].sub(amount0);
-        _vaults[key1] = _vaults[key1].sub(amount1);
-
-        IERC20(token0).safeTransfer(msg.sender, amount0);
-        IERC20(token1).safeTransfer(msg.sender, amount1);
+        if (amount0 > 0) {
+            bytes32 key0 = keccak256(abi.encodePacked(yangId, token0));
+            _vaults[key0] = _vaults[key0].sub(amount0);
+            IERC20(token0).safeTransfer(msg.sender, amount0);
+        }
+        if (amount1 > 0) {
+            bytes32 key1 = keccak256(abi.encodePacked(yangId, token1));
+            _vaults[key1] = _vaults[key1].sub(amount1);
+            IERC20(token1).safeTransfer(msg.sender, amount1);
+        }
     }
 
     function _subscribe(
