@@ -148,6 +148,15 @@ Get subscribe amount0, amount1 and shares
 * uint256 chiId: CHI Management NFT tokenId
 
 
+### vaults
+
+```
+function vaults(address token) external return (uint256)
+```
+
+Get user token asset through token address
+
+
 ### getCHITotalAmount
 
 ```

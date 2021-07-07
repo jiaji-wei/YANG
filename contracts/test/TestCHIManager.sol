@@ -3,22 +3,20 @@
 pragma solidity ^0.7.6;
 pragma abicoder v2;
 
-
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
+import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 
-import "../interfaces/ICHIVault.sol";
-import "../interfaces/ICHIManager.sol";
-import "../interfaces/ICHIVaultDeployer.sol";
+import '../interfaces/ICHIVault.sol';
+import '../interfaces/ICHIManager.sol';
+import '../interfaces/ICHIVaultDeployer.sol';
 
-import "../libraries/CHI.sol";
-import "../libraries/YangPosition.sol";
-
+import '../libraries/CHI.sol';
+import '../libraries/YangPosition.sol';
 
 contract TestCHIManager is ERC721, ICHIManager {
     using SafeERC20 for IERC20;

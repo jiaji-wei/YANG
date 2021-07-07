@@ -34,4 +34,3 @@ contract TestCHIVaultDeployer is ICHIVaultDeployer {
         CHIManager = _manager;
     }
 }
-

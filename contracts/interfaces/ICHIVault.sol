@@ -67,4 +67,3 @@ interface ICHIVault {
 
     function removeAllLiquidityFromPosition(uint256 rangeIndex) external returns (uint256 amount0, uint256 amount1);
 }
-

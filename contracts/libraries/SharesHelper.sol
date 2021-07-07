@@ -1,10 +1,10 @@
- // SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.7.6;
 
-import "@openzeppelin/contracts/math/Math.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import '@openzeppelin/contracts/math/Math.sol';
+import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import '@uniswap/v3-core/contracts/libraries/FullMath.sol';
 import '@uniswap/v3-core/contracts/libraries/Position.sol';
@@ -13,17 +13,15 @@ import '@uniswap/v3-core/contracts/libraries/LiquidityMath.sol';
 import '@uniswap/v3-core/contracts/libraries/TickMath.sol';
 import '@uniswap/v3-core/contracts/libraries/SafeCast.sol';
 import '@uniswap/v3-core/contracts/libraries/FixedPoint128.sol';
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/v3-periphery/contracts/libraries/PositionKey.sol";
+import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
+import '@uniswap/v3-periphery/contracts/libraries/PositionKey.sol';
 
-import "./CHI.sol";
-import "./PoolPosition.sol";
-import "../interfaces/ICHIVault.sol";
-import "../interfaces/IYangNFTVault.sol";
-
+import './CHI.sol';
+import './PoolPosition.sol';
+import '../interfaces/ICHIVault.sol';
+import '../interfaces/IYangNFTVault.sol';
 
 library SharesHelper {
-
     struct _burnShareParams {
         IUniswapV3Pool pool;
         ICHIVault vault;
@@ -74,10 +72,10 @@ library SharesHelper {
             shares = FullMath.mulDiv(amount0, totalSupply, totalAmount0);
         } else {
             uint256 cross = Math.min(
-                                SafeMath.mul(amount0Desired, totalAmount1),
-                                SafeMath.mul(amount1Desired, totalAmount0)
-                            );
-            require(cross > 0, "c");
+                SafeMath.mul(amount0Desired, totalAmount1),
+                SafeMath.mul(amount1Desired, totalAmount0)
+            );
+            require(cross > 0, 'c');
 
             // Round up amounts
             amount0 = SafeMath.add(SafeMath.div(SafeMath.sub(cross, 1), totalAmount1), 1);
@@ -92,28 +90,21 @@ library SharesHelper {
         address yang,
         uint256 yangId,
         uint256 shares
-    )
-        internal
-        view
-        returns (
-            uint256 amount0,
-            uint256 amount1
-        )
-    {
-        for (uint i = 0; i < vault.getRangeCount(); i++) {
+    ) internal view returns (uint256 amount0, uint256 amount1) {
+        for (uint256 i = 0; i < vault.getRangeCount(); i++) {
             (int24 tickLower, int24 tickUpper) = vault.getRange(i);
             uint128 liquidity = PoolPosition._poolLiquidity(pool, address(vault), tickLower, tickUpper);
             if (liquidity > 0) {
                 _burnShareParams memory params = _burnShareParams({
-                                        pool: pool,
-                                        vault:vault,
-                                        yang: yang,
-                                        yangId: yangId,
-                                        liquidity: liquidity,
-                                        shares: shares,
-                                        tickLower: tickLower,
-                                        tickUpper: tickUpper
-                                    });
+                    pool: pool,
+                    vault: vault,
+                    yang: yang,
+                    yangId: yangId,
+                    liquidity: liquidity,
+                    shares: shares,
+                    tickLower: tickLower,
+                    tickUpper: tickUpper
+                });
                 (uint256 _amount0, uint256 _amount1) = _burnShare(params);
                 amount0 = SafeMath.add(amount0, _amount0);
                 amount1 = SafeMath.add(amount1, _amount1);
@@ -122,44 +113,44 @@ library SharesHelper {
         IERC20 token0 = IERC20(pool.token0());
         IERC20 token1 = IERC20(pool.token1());
         uint256 unusedAmount0 = FullMath.mulDiv(
-                    SafeMath.sub(token0.balanceOf(address(vault)), vault.accruedProtocolFees0()),
-                    shares,
-                    vault.totalSupply()
-                );
+            SafeMath.sub(token0.balanceOf(address(vault)), vault.accruedProtocolFees0()),
+            shares,
+            vault.totalSupply()
+        );
         uint256 unusedAmount1 = FullMath.mulDiv(
-                    SafeMath.sub(token1.balanceOf(address(vault)), vault.accruedProtocolFees1()),
-                    shares,
-                    vault.totalSupply()
-                );
+            SafeMath.sub(token1.balanceOf(address(vault)), vault.accruedProtocolFees1()),
+            shares,
+            vault.totalSupply()
+        );
         amount0 = SafeMath.add(amount0, unusedAmount0);
         amount1 = SafeMath.add(amount1, unusedAmount1);
     }
 
-    function _burnShare(_burnShareParams memory params)
-        private view returns (uint256 amount0, uint256 amount1)
-    {
+    function _burnShare(_burnShareParams memory params) private view returns (uint256 amount0, uint256 amount1) {
         int128 liquidityDelta = SafeCast.toInt128(
-                    -int256(FullMath.mulDiv(uint256(params.liquidity),
-                                            params.shares,
-                                            params.vault.totalSupply())
-                    ));
+            -int256(FullMath.mulDiv(uint256(params.liquidity), params.shares, params.vault.totalSupply()))
+        );
         if (liquidityDelta > 0) {
             // according to pool.burn calculate amount0, amount1
             uint256 yangId = params.yangId;
             (uint256 collect0, uint256 collect1) = _poolBurn(
-                    params.pool, params.tickLower, params.tickUpper, liquidityDelta);
+                params.pool,
+                params.tickLower,
+                params.tickUpper,
+                liquidityDelta
+            );
 
             bytes32 key0 = PoolPosition.compute(yangId, address(params.vault), params.tickLower, params.tickUpper);
             bytes32 key1 = PositionKey.compute(address(params.vault), params.tickLower, params.tickUpper);
 
             _poolCollectParams memory _params = _poolCollectParams({
-                        pool: params.pool,
-                        yang: params.yang,
-                        key0: key0,
-                        key1: key1,
-                        collect0: collect0,
-                        collect1: collect1
-                    });
+                pool: params.pool,
+                yang: params.yang,
+                key0: key0,
+                key1: key1,
+                collect0: collect0,
+                collect1: collect1
+            });
             (uint256 tokensOwed0, uint256 tokensOwed1) = _poolCollect(params.tickLower, params.tickUpper, _params);
             amount0 = collect0 > tokensOwed0 ? tokensOwed0 : collect0;
             amount1 = collect1 > tokensOwed1 ? tokensOwed1 : collect1;
@@ -171,8 +162,7 @@ library SharesHelper {
         int24 tickLower,
         int24 tickUpper,
         int128 liquidityDelta
-    ) private view returns (uint256, uint256)
-    {
+    ) private view returns (uint256, uint256) {
         (uint160 sqrtPriceX96, int24 tick, , , , , ) = pool.slot0();
         int256 amount0;
         int256 amount1;
@@ -213,38 +203,27 @@ library SharesHelper {
         uint128 tokensOwed1,
         uint256 feeGrowthInside0LastX128,
         uint256 feeGrowthInside1LastX128
-    ) private pure returns (uint256, uint256)
-    {
+    ) private pure returns (uint256, uint256) {
         tokensOwed0 += uint128(
-            FullMath.mulDiv(
-                feeGrowthInside0LastX128 - _feeGrowthInside0LastX128,
-                _liquidity,
-                FixedPoint128.Q128
-            )
+            FullMath.mulDiv(feeGrowthInside0LastX128 - _feeGrowthInside0LastX128, _liquidity, FixedPoint128.Q128)
         );
         tokensOwed1 += uint128(
-            FullMath.mulDiv(
-                feeGrowthInside1LastX128 - _feeGrowthInside1LastX128,
-                _liquidity,
-                FixedPoint128.Q128
-            )
+            FullMath.mulDiv(feeGrowthInside1LastX128 - _feeGrowthInside1LastX128, _liquidity, FixedPoint128.Q128)
         );
         return (uint256(tokensOwed0), uint256(tokensOwed1));
     }
 
-    function _getFeeGrowthInside(IUniswapV3Pool pool, bytes32 key, int24 tickLower, int24 tickUpper)
-        private view returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128)
-    {
-        (
-            ,
-            uint256 _feeGrowthInside0LastX128,
-            uint256 _feeGrowthInside1LastX128,
-            ,
-        ) = pool.positions(key);
+    function _getFeeGrowthInside(
+        IUniswapV3Pool pool,
+        bytes32 key,
+        int24 tickLower,
+        int24 tickUpper
+    ) private view returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
+        (, uint256 _feeGrowthInside0LastX128, uint256 _feeGrowthInside1LastX128, , ) = pool.positions(key);
         (, int24 tickCurrent, , , , , ) = pool.slot0();
 
         // calculate fee growth below
-        (,,uint256 feeGrowthOutside0X128Lower, uint256 feeGrowthOutside1X128Lower,,,,) = pool.ticks(tickLower);
+        (, , uint256 feeGrowthOutside0X128Lower, uint256 feeGrowthOutside1X128Lower, , , , ) = pool.ticks(tickLower);
         uint256 feeGrowthBelow0X128;
         uint256 feeGrowthBelow1X128;
         if (tickCurrent >= tickLower) {
@@ -255,7 +234,7 @@ library SharesHelper {
             feeGrowthBelow1X128 = _feeGrowthInside1LastX128 - feeGrowthOutside1X128Lower;
         }
 
-        (,,uint256 feeGrowthOutside0X128Upper, uint256 feeGrowthOutside1X128Upper,,,,) = pool.ticks(tickUpper);
+        (, , uint256 feeGrowthOutside0X128Upper, uint256 feeGrowthOutside1X128Upper, , , , ) = pool.ticks(tickUpper);
 
         // calculate fee growth above
         uint256 feeGrowthAbove0X128;
@@ -275,9 +254,8 @@ library SharesHelper {
     function _poolCollect(
         int24 tickLower,
         int24 tickUpper,
-        _poolCollectParams memory params)
-        private view returns (uint256, uint256)
-    {
+        _poolCollectParams memory params
+    ) private view returns (uint256, uint256) {
         (
             uint128 _liquidity,
             uint256 _feeGrowthInside0LastX128,
@@ -286,20 +264,23 @@ library SharesHelper {
             uint128 tokensOwed1
         ) = IYangNFTVault(params.yang).poolPositions(params.key0);
 
-        (
-            uint256 feeGrowthInside0LastX128,
-            uint256 feeGrowthInside1LastX128
-        ) = _getFeeGrowthInside(params.pool, params.key1, tickLower, tickUpper);
-
-        return _collect(
-            _liquidity,
-            _feeGrowthInside0LastX128,
-            _feeGrowthInside1LastX128,
-            tokensOwed0 + uint128(params.collect0),
-            tokensOwed1 + uint128(params.collect1),
-            feeGrowthInside0LastX128,
-            feeGrowthInside1LastX128
+        (uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128) = _getFeeGrowthInside(
+            params.pool,
+            params.key1,
+            tickLower,
+            tickUpper
         );
+
+        return
+            _collect(
+                _liquidity,
+                _feeGrowthInside0LastX128,
+                _feeGrowthInside1LastX128,
+                tokensOwed0 + uint128(params.collect0),
+                tokensOwed1 + uint128(params.collect1),
+                feeGrowthInside0LastX128,
+                feeGrowthInside1LastX128
+            );
     }
 
     function getSharesAndAmounts(
@@ -309,21 +290,21 @@ library SharesHelper {
     )
         internal
         view
-        returns (uint256, uint256, uint256)
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
     {
         ICHIVault vault = ICHIVault(_vault);
         (uint256 totalAmount0, uint256 totalAmount1) = vault.getTotalAmounts();
-        (
-            uint256 shares,
-            uint256 amount0,
-            uint256 amount1
-        ) = calcSharesAndAmounts(
-                totalAmount0,
-                totalAmount1,
-                amount0Desired,
-                amount1Desired,
-                vault.totalSupply()
-            );
+        (uint256 shares, uint256 amount0, uint256 amount1) = calcSharesAndAmounts(
+            totalAmount0,
+            totalAmount1,
+            amount0Desired,
+            amount1Desired,
+            vault.totalSupply()
+        );
         return (shares, amount0, amount1);
     }
 
@@ -332,19 +313,9 @@ library SharesHelper {
         address _vault,
         uint256 yangId,
         uint256 shares
-    )
-        internal
-        view
-        returns (uint256 amount0, uint256 amount1)
-    {
+    ) internal view returns (uint256 amount0, uint256 amount1) {
         ICHIVault vault = ICHIVault(_vault);
         IUniswapV3Pool pool = IUniswapV3Pool(_pool);
-        (amount0, amount1) = calcAmountsFromShares(
-                pool,
-                vault,
-                msg.sender,
-                yangId,
-                shares
-        );
+        (amount0, amount1) = calcAmountsFromShares(pool, vault, msg.sender, yangId, shares);
     }
 }

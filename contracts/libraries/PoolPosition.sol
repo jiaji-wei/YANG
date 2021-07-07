@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.7.6;
 
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/v3-periphery/contracts/libraries/PositionKey.sol";
+import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
+import '@uniswap/v3-periphery/contracts/libraries/PositionKey.sol';
 
-import "../interfaces/ICHIVault.sol";
-
+import '../interfaces/ICHIVault.sol';
 
 library PoolPosition {
     struct Info {
@@ -21,8 +20,7 @@ library PoolPosition {
         address vault,
         int24 tickLower,
         int24 tickUpper
-    ) internal view returns (uint128 liquidity)
-    {
+    ) internal view returns (uint128 liquidity) {
         (liquidity, , , , ) = pool.positions(PositionKey.compute(vault, tickLower, tickUpper));
     }
 
@@ -31,9 +29,8 @@ library PoolPosition {
         address vault,
         int24 tickLower,
         int24 tickUpper
-    ) internal pure returns (bytes32)
-    {
-       return keccak256(abi.encodePacked(yangId, vault, tickLower, tickUpper));
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(yangId, vault, tickLower, tickUpper));
     }
 
     function get(
@@ -42,8 +39,7 @@ library PoolPosition {
         address vault,
         int24 tickLower,
         int24 tickUpper
-    ) internal view returns (PoolPosition.Info storage position)
-    {
+    ) internal view returns (PoolPosition.Info storage position) {
         position = self[compute(yangId, vault, tickLower, tickUpper)];
     }
 
@@ -54,8 +50,7 @@ library PoolPosition {
         uint256 feeGrowthInside1LastX128,
         uint128 tokensOwed0,
         uint128 tokensOwed1
-    ) internal
-    {
+    ) internal {
         self.liquidity = liquidity;
         self.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
         self.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
@@ -68,9 +63,8 @@ library PoolPosition {
         IUniswapV3Pool pool,
         ICHIVault vault,
         uint256 yangId
-    ) internal
-    {
-        for (uint i = 0; i < vault.getRangeCount(); i++) {
+    ) internal {
+        for (uint256 i = 0; i < vault.getRangeCount(); i++) {
             (int24 tickLower, int24 tickUpper) = vault.getRange(i);
             if (_poolLiquidity(pool, address(vault), tickLower, tickUpper) > 0) {
                 PoolPosition.Info storage position = get(self, yangId, address(vault), tickLower, tickUpper);
@@ -97,9 +91,8 @@ library PoolPosition {
         mapping(bytes32 => Info) storage self,
         ICHIVault vault,
         uint256 yangId
-    ) internal
-    {
-        for (uint i = 0; i < vault.getRangeCount(); i++) {
+    ) internal {
+        for (uint256 i = 0; i < vault.getRangeCount(); i++) {
             (int24 tickLower, int24 tickUpper) = vault.getRange(i);
             delete self[compute(yangId, address(vault), tickLower, tickUpper)];
         }

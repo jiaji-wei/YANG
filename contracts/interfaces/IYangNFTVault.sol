@@ -4,7 +4,6 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 interface IYangNFTVault {
-
     struct SubscribeParam {
         uint256 yangId;
         uint256 chiId;
@@ -29,10 +28,31 @@ interface IYangNFTVault {
     event UnSubscribe(uint256 indexed yangId, uint256 indexed chiId, uint256 amount0, uint256 amount1);
 
     function setCHIManager(address) external;
+
     function mint(address recipient) external returns (uint256 tokenId);
-    function deposit(address token0, uint256 amount0, address token1, uint256 amount1) external;
-    function withdraw(address token0, uint256 amount0, address token1, uint256 amount1) external;
-    function subscribe(SubscribeParam memory params) external returns (uint256 amount0, uint256 amount1, uint256 share);
+
+    function deposit(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1
+    ) external;
+
+    function withdraw(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1
+    ) external;
+
+    function subscribe(SubscribeParam memory params)
+        external
+        returns (
+            uint256 amount0,
+            uint256 amount1,
+            uint256 share
+        );
+
     function unsubscribe(UnSubscribeParam memory params) external;
 
     // view
@@ -41,20 +61,33 @@ interface IYangNFTVault {
         uint256 amount0Desired,
         uint256 amount1Desired
     ) external view returns (uint256);
-    function getAmounts(
-        uint256 yangId,
-        uint256 chiId
-    ) external view returns (uint256, uint256);
-    function getCHITotalAmounts(uint256 chiId) external view returns(uint256, uint256);
+
+    function getAmounts(uint256 yangId, uint256 chiId) external view returns (uint256, uint256);
+
+    function getCHITotalAmounts(uint256 chiId) external view returns (uint256, uint256);
+
     function getCHIAccruedFees(uint256 chiId) external view returns (uint256 fee0, uint256 fee1);
 
     // positions
     function yangPositions(uint256 yangId, uint256 chiId)
-        external returns (uint256 amount0, uint256 amount1, uint256 shares);
+        external
+        returns (
+            uint256 amount0,
+            uint256 amount1,
+            uint256 shares
+        );
+
     function poolPositions(bytes32)
         external
         view
-        returns (uint128, uint256, uint256, uint128, uint128);
+        returns (
+            uint128,
+            uint256,
+            uint256,
+            uint128,
+            uint128
+        );
+
     function vaults(address token) external view returns (uint256);
 
     function getTokenId(address recipient) external view returns (uint256);

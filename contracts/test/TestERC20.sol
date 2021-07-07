@@ -3,8 +3,7 @@
 pragma solidity ^0.7.6;
 
 import '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
-import "@openzeppelin/contracts/math/SafeMath.sol";
-
+import '@openzeppelin/contracts/math/SafeMath.sol';
 
 contract TestERC20 is IERC20Minimal {
     using SafeMath for uint256;

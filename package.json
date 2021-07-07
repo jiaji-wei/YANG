@@ -38,7 +38,7 @@
     "hardhat-contract-sizer": "^2.0.3",
     "lodash": "^4.17.21",
     "mocha-chai-jest-snapshot": "^1.1.0",
-    "prettier": "^2.2.1",
+    "prettier": "^2.3.2",
     "prettier-check": "^2.0.0",
     "prettier-plugin-solidity": "^1.0.0-beta.10",
     "solhint": "^3.2.1",
@@ -51,6 +51,7 @@
     "compile": "hardhat compile",
     "lint": "eslint . --ext .ts",
     "prettier:check": "prettier-check contracts/**/*.sol test/**/*.ts types/*.ts",
+    "prettier": "prettier --write 'contracts/**/*.sol'",
     "size-contracts": "hardhat compile && hardhat size-contracts",
     "test": "hardhat test",
     "clear-cache": "rm -rf artifacts/ cache/ typechain/"

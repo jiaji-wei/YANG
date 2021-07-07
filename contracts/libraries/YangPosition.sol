@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.7.6;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import '@openzeppelin/contracts/math/SafeMath.sol';
 
 library YangPosition {
     struct Info {
@@ -14,8 +14,7 @@ library YangPosition {
         mapping(bytes32 => Info) storage self,
         uint256 yangId,
         uint256 chiId
-    ) internal view returns (YangPosition.Info storage position)
-    {
+    ) internal view returns (YangPosition.Info storage position) {
         position = self[keccak256(abi.encodePacked(yangId, chiId))];
     }
 }

@@ -14,10 +14,9 @@ import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 import '@uniswap/v3-core/contracts/libraries/TickMath.sol';
 import '@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol';
 
-import "../interfaces/ICHIDepositCallBack.sol";
-import "../interfaces/ICHIVault.sol";
-import "../interfaces/ICHIManager.sol";
-
+import '../interfaces/ICHIDepositCallBack.sol';
+import '../interfaces/ICHIVault.sol';
+import '../interfaces/ICHIManager.sol';
 
 contract TestCHIVault is ICHIVault, IUniswapV3MintCallback {
     using SafeERC20 for IERC20;
@@ -167,11 +166,7 @@ contract TestCHIVault is ICHIVault, IUniswapV3MintCallback {
         uint256 amount0Min,
         uint256 amount1Min,
         address to
-    ) external
-      override
-      onlyManager
-      returns (uint256 amount0, uint256 amount1)
-    {
+    ) external override onlyManager returns (uint256 amount0, uint256 amount1) {
         require(shares > 0, 's');
         require(to != address(0) && to != address(this), 'to');
 

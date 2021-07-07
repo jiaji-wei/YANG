@@ -89,4 +89,3 @@ interface ICHIManager is ICHIDepositCallBack {
 
     event Create(uint256 tokenId, address pool, address vault, uint256 vaultFee);
 }
-
