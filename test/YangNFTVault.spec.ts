@@ -187,7 +187,7 @@ describe('YangNFTVault', () => {
             expect(await token1.balanceOf(yangNFT.address)).to.eq(0)
 
             const amountDesired = convertTo18Decimals(1000);
-            const calShare = await yangNFT.getShares(chiId, amountDesired, amountDesired);
+            const [calShare, _amount0, _amount1] = await yangNFT.getShares(chiId, amountDesired, amountDesired);
             await expect(calShare).to.gt(0);
             const subscribeParam = {
                 yangId: yangId,
