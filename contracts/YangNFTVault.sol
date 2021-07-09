@@ -70,7 +70,7 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         emit MintYangNFT(recipient, tokenId);
     }
 
-    function deposit(
+    function _deposit(
         address token0,
         uint256 amount0,
         address token1,
@@ -127,12 +127,12 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
 
         if (params.amount0Desired - amount0 > 0) {
             bytes32 key0 = keccak256(abi.encodePacked(params.yangId, token0));
-            _vaults[key0] = _vaults[key0].add(amount0);
+            _vaults[key0] = _vaults[key0].add(params.amount0Desired - amount0);
         }
 
         if (params.amount1Desired - amount1 > 0) {
             bytes32 key1 = keccak256(abi.encodePacked(params.yangId, token1));
-            _vaults[key1] = _vaults[key1].add(amount1);
+            _vaults[key1] = _vaults[key1].add(params.amount1Desired - amount1);
         }
 
         IERC20(token0).safeApprove(chiManager, 0);
@@ -158,7 +158,7 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         address token1 = pool.token1();
 
         // deposit valut to yangNFT and then to chi
-        deposit(token0, params.amount0Desired, token1, params.amount1Desired);
+        _deposit(token0, params.amount0Desired, token1, params.amount1Desired);
 
         (amount0, amount1, shares) = _subscribe(token0, token1, params);
 
@@ -277,11 +277,10 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         uint256 chiId,
         uint256 amount0Desired,
         uint256 amount1Desired
-    ) external view override returns (uint256) {
+    ) external view override returns (uint256 shares, uint256 amount0, uint256 amount1) {
         require(chiManager != address(0), 'CHI');
         (, , , address _vault, , , , ) = ICHIManager(chiManager).chi(chiId);
-        (uint256 shares, , ) = SharesHelper.getSharesAndAmounts(_vault, amount0Desired, amount1Desired);
-        return shares;
+        (shares, amount0, amount1) = SharesHelper.getSharesAndAmounts(_vault, amount0Desired, amount1Desired);
     }
 
     function getAmounts(uint256 yangId, uint256 chiId)
