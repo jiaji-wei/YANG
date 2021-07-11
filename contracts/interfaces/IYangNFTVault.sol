@@ -31,13 +31,6 @@ interface IYangNFTVault {
 
     function mint(address recipient) external returns (uint256 tokenId);
 
-    function withdraw(
-        address token0,
-        uint256 amount0,
-        address token1,
-        uint256 amount1
-    ) external;
-
     function subscribe(SubscribeParam memory params)
         external
         returns (
@@ -80,8 +73,6 @@ interface IYangNFTVault {
             uint128,
             uint128
         );
-
-    function vaults(address recipient, address token) external view returns (uint256);
 
     function getTokenId(address recipient) external view returns (uint256);
 }

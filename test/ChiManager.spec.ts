@@ -262,20 +262,11 @@ describe('CHIManager', () => {
           amount0Min: convertTo18Decimals(1000),
           amount1Min: convertTo18Decimals(1000),
         }
+        const beforeToken0Amount = await token0.balanceOf(trader.address)
+        const beforeToken1Amount = await token1.balanceOf(trader.address)
         await yangNFT.connect(trader).unsubscribe(unsubscribeParam)
-        expect(await token0.balanceOf(yangNFT.address)).to.eq(convertTo18Decimals(1000));
-        expect(await token1.balanceOf(yangNFT.address)).to.eq(convertTo18Decimals(1000));
-        {
-            let [_amount0, _amount1, _shares] = await yangNFT.connect(trader).yangPositions(1, tokenId1);
-            await expect(_amount0).to.eq(0);
-            await expect(_amount1).to.eq(0);
-            await expect(_shares).to.eq(0);
-            let token0Amount = await yangNFT.connect(trader).vaults(token0.address);
-            let token1Amount = await yangNFT.connect(trader).vaults(token1.address);
-            await expect(token0Amount).to.eq(convertTo18Decimals(1000));
-            await expect(token1Amount).to.eq(convertTo18Decimals(1000));
-            await yangNFT.connect(trader).withdraw(token0.address, token0Amount, token1.address, token1Amount);
-        }
+        expect((await token0.balanceOf(trader.address)).sub(beforeToken0Amount)).to.eq(convertTo18Decimals(1000));
+        expect((await token1.balanceOf(trader.address)).sub(beforeToken1Amount)).to.eq(convertTo18Decimals(1000));
       })
 
       it('add liquidity and remove liquidity', async () => {
@@ -372,15 +363,22 @@ describe('CHIManager', () => {
           amount0Min: 0,
           amount1Min: 0,
         }
+
+        const beforeToken0Amount = await token0.balanceOf(trader.address)
+        const beforeToken1Amount = await token1.balanceOf(trader.address)
         await yangNFT.connect(trader).unsubscribe(unsubscribeParam)
+        const afterToken0Amount = await token0.balanceOf(trader.address)
+        const afterToken1Amount = await token1.balanceOf(trader.address)
+        const diffToken0Amount = afterToken0Amount.sub(beforeToken0Amount)
+        const diffToken1Amount = afterToken1Amount.sub(beforeToken1Amount)
         // 29970029970029 is protocol fee
-        expect(await token0.balanceOf(yangNFT.address)).to.eq(
+        expect(diffToken0Amount).to.eq(
           tokenAmount0
             .add(amount0Delta.mul(convertTo18Decimals(1000)).div(convertTo18Decimals(1001)))
             .sub(29970029970029)
             .sub(convertTo18Decimals(9000))
         )
-        expect(await token1.balanceOf(yangNFT.address)).to.eq(
+        expect(diffToken1Amount).to.eq(
           tokenAmount1
             .add(amount1Delta.mul(convertTo18Decimals(1000)).div(convertTo18Decimals(1001)))
             .sub(3)

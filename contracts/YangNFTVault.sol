@@ -50,9 +50,6 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
     // poolPosition
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
 
-    // vaults
-    mapping(bytes32 => uint256) private _vaults;
-
     constructor() ERC721('YIN Asset Manager Vault', 'YANG') {
         owner = msg.sender;
     }
@@ -82,21 +79,16 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         IERC20(token1).safeTransferFrom(msg.sender, address(this), amount1);
     }
 
-    function withdraw(
+    function _withdraw(
         address token0,
         uint256 amount0,
         address token1,
         uint256 amount1
-    ) public override nonReentrant {
-        uint256 yangId = getTokenId(msg.sender);
+    ) internal {
         if (amount0 > 0) {
-            bytes32 key0 = keccak256(abi.encodePacked(yangId, token0));
-            _vaults[key0] = _vaults[key0].sub(amount0);
             IERC20(token0).safeTransfer(msg.sender, amount0);
         }
         if (amount1 > 0) {
-            bytes32 key1 = keccak256(abi.encodePacked(yangId, token1));
-            _vaults[key1] = _vaults[key1].sub(amount1);
             IERC20(token1).safeTransfer(msg.sender, amount1);
         }
     }
@@ -124,16 +116,6 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
             params.amount0Min,
             params.amount1Min
         );
-
-        if (params.amount0Desired - amount0 > 0) {
-            bytes32 key0 = keccak256(abi.encodePacked(params.yangId, token0));
-            _vaults[key0] = _vaults[key0].add(params.amount0Desired - amount0);
-        }
-
-        if (params.amount1Desired - amount1 > 0) {
-            bytes32 key1 = keccak256(abi.encodePacked(params.yangId, token1));
-            _vaults[key1] = _vaults[key1].add(params.amount1Desired - amount1);
-        }
 
         IERC20(token0).safeApprove(chiManager, 0);
         IERC20(token1).safeApprove(chiManager, 0);
@@ -192,14 +174,7 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         );
 
         IUniswapV3Pool pool = IUniswapV3Pool(_pool);
-        if (amount0 > 0) {
-            bytes32 key0 = keccak256(abi.encodePacked(params.yangId, pool.token0()));
-            _vaults[key0] = _vaults[key0].add(amount0);
-        }
-        if (amount1 > 0) {
-            bytes32 key1 = keccak256(abi.encodePacked(params.yangId, pool.token1()));
-            _vaults[key1] = _vaults[key1].add(amount1);
-        }
+        _withdraw(pool.token0(), amount0, pool.token1(), amount1);
 
         YangPosition.Info storage position = _positions.get(params.yangId, params.chiId);
         position.shares = position.shares.sub(params.shares);
@@ -253,11 +228,6 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
 
     function getTokenId(address recipient) public view override returns (uint256) {
         return _usersMap[recipient];
-    }
-
-    function vaults(address recipient, address token) external view override returns (uint256) {
-        uint256 yangId = getTokenId(recipient);
-        return _vaults[keccak256(abi.encodePacked(yangId, token))];
     }
 
     function getCHITotalAmounts(uint256 chiId) external view override returns (uint256 amount0, uint256 amount1) {
