@@ -255,8 +255,8 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
         return _usersMap[recipient];
     }
 
-    function vaults(address token) external view override returns (uint256) {
-        uint256 yangId = getTokenId(msg.sender);
+    function vaults(address recipient, address token) external view override returns (uint256) {
+        uint256 yangId = getTokenId(recipient);
         return _vaults[keccak256(abi.encodePacked(yangId, token))];
     }
 

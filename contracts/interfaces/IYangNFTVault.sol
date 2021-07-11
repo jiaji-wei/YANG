@@ -81,7 +81,7 @@ interface IYangNFTVault {
             uint128
         );
 
-    function vaults(address token) external view returns (uint256);
+    function vaults(address recipient, address token) external view returns (uint256);
 
     function getTokenId(address recipient) external view returns (uint256);
 }

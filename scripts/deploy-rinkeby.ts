@@ -7,7 +7,7 @@ async function main() {
     await YangNFT.deployed();
 
     console.log('YANGNFTVault')
-    console.log(YangNFT.address) // 0x5fB7Fd5AB0aD08fd5D7c341Cd7e877434b72ae51
+    console.log(YangNFT.address) // 0x361582386541F9Bc612DB75b4270A1712e389F0e
     console.log(YangNFT.deployTransaction.hash);
 }
 
