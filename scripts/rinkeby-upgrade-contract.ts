@@ -1,9 +1,10 @@
 const { ethers, upgrades } = require('hardhat');
 
+const YangNFT = '0x68a0f259bd2c8faf7d515b5d03eba5c018cbc116';
+
 async function main() {
     const yangV2Factory = await ethers.getContractFactory('YangNFTVault');
-    const yangV2Contract = await upgrades.upgradeProxy('0x68a0f259bd2c8faf7d515b5d03eba5c018cbc116',
-                                                       yangV2Factory);
+    const yangV2Contract = await upgrades.upgradeProxy(YangNFT, yangV2Factory);
     console.log('Upgrade YangNFTVault') // 0x68a0f259bd2c8faf7d515b5d03eba5c018cbc116
     console.log(yangV2Contract.address)
 }
