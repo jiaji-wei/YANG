@@ -2,7 +2,7 @@ const { ethers, upgrades } = require('hardhat');
 
 async function main () {
     const YangNFTFactory = await ethers.getContractFactory('YangNFTVault');
-    const instance = await upgrades.deployProxy(YangNFTFactory);
+    const instance = await upgrades.deployProxy(YangNFTFactory, [1]);
     await instance.deployed();
 
     console.log('YANGNFTVault')
