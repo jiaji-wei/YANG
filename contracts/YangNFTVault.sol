@@ -6,7 +6,6 @@ pragma abicoder v2;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
-import '@openzeppelin/contracts/proxy/Initializable.sol';
 
 import '@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
@@ -20,7 +19,7 @@ import './interfaces/IYangNFTVault.sol';
 import './interfaces/ICHIManager.sol';
 import './interfaces/ICHIVault.sol';
 
-contract YangNFTVault is IYangNFTVault, Initializable, ReentrancyGuardUpgradeable, ERC721Upgradeable {
+contract YangNFTVault is IYangNFTVault, ReentrancyGuardUpgradeable, ERC721Upgradeable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using PoolPosition for mapping(bytes32 => PoolPosition.Info);
@@ -43,7 +42,7 @@ contract YangNFTVault is IYangNFTVault, Initializable, ReentrancyGuardUpgradeabl
     }
 
     // nft and Yang tokenId
-    uint256 private _nextId = 1;
+    uint256 private _nextId;
     mapping(address => uint256) private _usersMap;
 
     // yangPosition
@@ -53,8 +52,9 @@ contract YangNFTVault is IYangNFTVault, Initializable, ReentrancyGuardUpgradeabl
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
 
     // initialize
-    function initialize() public initializer {
+    function initialize(uint256 _initId) public initializer {
         owner = msg.sender;
+        _nextId = _initId;
         __ERC721_init("YIN Asset Manager Vault", "YANG");
     }
 

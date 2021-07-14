@@ -1,6 +1,6 @@
 import { Fixture } from 'ethereum-waffle';
 import { constants, BigNumber } from 'ethers';
-import { ethers, waffle } from 'hardhat';
+import { ethers, waffle, upgrades } from 'hardhat';
 
 import UniswapV3Pool from '@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json';
 import UniswapV3FactoryJson from '@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json';
@@ -165,7 +165,8 @@ export const shareFixture: Fixture<ShareFixtureType> = async (wallets, provider)
     const allGov = accounts.allGov();
 
     const yangNFTFactory = await ethers.getContractFactory('YangNFTVault', yangDeployer);
-    const yangNFT = (await yangNFTFactory.deploy()) as YangNFTVault;
+    const yangNFT = (await upgrades.deployProxy(yangNFTFactory, [1])) as YangNFTVault
+    //const yangNFT = (await yangNFTFactory.deploy()) as YangNFTVault;
 
     const chiVaultDeployerFactory = await ethers.getContractFactory('TestCHIVaultDeployer', chiDeployer);
     const chiManagerFactory = await ethers.getContractFactory('TestCHIManager', chiDeployer);
