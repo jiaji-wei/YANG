@@ -3,11 +3,13 @@
 pragma solidity ^0.7.6;
 pragma abicoder v2;
 
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
-import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/proxy/Initializable.sol';
+
+import '@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
 
 import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 
@@ -18,7 +20,7 @@ import './interfaces/IYangNFTVault.sol';
 import './interfaces/ICHIManager.sol';
 import './interfaces/ICHIVault.sol';
 
-contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
+contract YangNFTVault is IYangNFTVault, Initializable, ReentrancyGuardUpgradeable, ERC721Upgradeable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using PoolPosition for mapping(bytes32 => PoolPosition.Info);
@@ -50,8 +52,10 @@ contract YangNFTVault is IYangNFTVault, ReentrancyGuard, ERC721 {
     // poolPosition
     mapping(bytes32 => PoolPosition.Info) private _poolPositions;
 
-    constructor() ERC721('YIN Asset Manager Vault', 'YANG') {
+    // initialize
+    function initialize() public initializer {
         owner = msg.sender;
+        __ERC721_init("YIN Asset Manager Vault", "YANG");
     }
 
     function setCHIManager(address _chiManager) external override onlyOwner {
